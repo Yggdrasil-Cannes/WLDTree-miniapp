@@ -62,8 +62,8 @@ export default function QuizPage() {
 
   const handleQuizComplete = (answers: any) => {
     console.log('Quiz completed with answers:', answers);
-    // Redirect to mint page
-    router.push('/quiz/mint');
+    // Redirect to tree page
+    router.push('/tree');
   };
 
   if (isLoading || !hasCheckedQuizStatus) {

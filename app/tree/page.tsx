@@ -35,7 +35,6 @@ function TreePageContent() {
   return (
     <div className="relative h-screen">
       <TabNavigation />
-      <TabBar className="fixed bottom-0 left-0 right-0 z-50" />
 
       {/* Modals */}
       <AnimatePresence>

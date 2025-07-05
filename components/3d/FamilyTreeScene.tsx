@@ -13,19 +13,53 @@ interface Person {
 }
 
 const FamilyTreeScene = () => {
-  const [familyData] = useState<Person[]>([
-    { id: 'genesis', name: 'Genesis Block', x: 0, y: 0, z: 0, generation: 0, children: ['child1', 'child2'] },
-    { id: 'child1', name: 'Alice Chain', x: -150, y: -120, z: 20, generation: 1, children: ['grandchild1'] },
-    { id: 'child2', name: 'Bob Block', x: 150, y: -120, z: -20, generation: 1, children: ['grandchild2'] },
-    { id: 'grandchild1', name: 'Carol Crypto', x: -150, y: -240, z: 40, generation: 2, children: [] },
-    { id: 'grandchild2', name: 'Dave DeFi', x: 150, y: -240, z: -40, generation: 2, children: [] }
+  const [familyData, setFamilyData] = useState<Person[]>([
+    { id: 'user', name: 'You', x: 0, y: 0, z: 0, generation: 0, children: [] }
   ])
 
   console.log('🌳 FamilyTreeScene: Component loaded with', familyData.length, 'family members')
   console.log('🌳 FamilyTreeScene: Multi-generational tree data:', familyData.map(p => `${p.name} (Gen ${p.generation})`))
 
-  const handleAddMember = () => {
-    console.log('🌳 FamilyTreeScene: Add member clicked')
+  const handleAddMember = (parentId: string, relationship: 'parent' | 'child' | 'spouse') => {
+    console.log('🌳 FamilyTreeScene: Add member clicked for', parentId, 'as', relationship)
+    
+    const parent = familyData.find(p => p.id === parentId)
+    if (!parent) return
+    
+    const newId = `member_${Date.now()}`
+    let newX = parent.x
+    let newY = parent.y
+    let newZ = parent.z
+    let newGeneration = parent.generation
+    
+    // Position new member based on relationship
+    if (relationship === 'parent') {
+      newY = parent.y + 120 // Above parent
+      newGeneration = parent.generation - 1
+    } else if (relationship === 'child') {
+      newY = parent.y - 120 // Below parent
+      newGeneration = parent.generation + 1
+    } else if (relationship === 'spouse') {
+      newX = parent.x + 150 // Beside parent
+    }
+    
+    const newMember: Person = {
+      id: newId,
+      name: 'New Member',
+      x: newX,
+      y: newY,
+      z: newZ,
+      generation: newGeneration,
+      children: []
+    }
+    
+    // Update parent's children if adding a child
+    if (relationship === 'child') {
+      const updatedParent = { ...parent, children: [...parent.children, newId] }
+      setFamilyData(prev => prev.map(p => p.id === parentId ? updatedParent : p))
+    }
+    
+    setFamilyData(prev => [...prev, newMember])
   }
 
   const handleSearch = () => {
@@ -42,6 +76,13 @@ const FamilyTreeScene = () => {
 
   return (
     <div className="relative w-full h-full bg-black overflow-hidden">
+      {/* Instructions */}
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-30">
+        <div className="bg-black bg-opacity-70 text-white px-4 py-2 rounded-lg text-sm">
+          <p>Double-click any node to add family members</p>
+          <p className="text-gray-400 text-xs">↑ Parent | ↓ Child | ↔ Spouse</p>
+        </div>
+      </div>
       {/* 3D CSS Transform Container */}
       <div 
         className="absolute inset-0"
@@ -56,6 +97,7 @@ const FamilyTreeScene = () => {
             key={person.id}
             person={person}
             onClick={() => console.log('Selected:', person.name)}
+            onAddMember={handleAddMember}
           />
         ))}
 
@@ -78,7 +120,7 @@ const FamilyTreeScene = () => {
 
       {/* Action Buttons */}
       <div className="absolute left-6 top-1/2 transform -translate-y-1/2 space-y-4 z-20">
-        <ActionButton icon="+" color="green" label="Add Member" onClick={handleAddMember} />
+        <ActionButton icon="+" color="green" label="Add Member" onClick={() => handleAddMember('user', 'child')} />
         <ActionButton icon="🔍" color="blue" label="Search" onClick={handleSearch} />
         <ActionButton icon="↗" color="purple" label="Share" onClick={handleShare} />
         <ActionButton icon="📋" color="orange" label="Export" onClick={handleExport} />
@@ -88,8 +130,13 @@ const FamilyTreeScene = () => {
 }
 
 // Individual Family Node Component
-const FamilyNode3D = ({ person, onClick }: { person: Person; onClick: () => void }) => {
+const FamilyNode3D = ({ person, onClick, onAddMember }: { 
+  person: Person; 
+  onClick: () => void;
+  onAddMember: (parentId: string, relationship: 'parent' | 'child' | 'spouse') => void;
+}) => {
   const [isHovered, setIsHovered] = useState(false)
+  const [showAddButtons, setShowAddButtons] = useState(false)
   
   return (
     <div
@@ -107,6 +154,7 @@ const FamilyNode3D = ({ person, onClick }: { person: Person; onClick: () => void
       onClick={onClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onDoubleClick={() => setShowAddButtons(!showAddButtons)}
     >
       {/* Node Sphere */}
       <div 
@@ -132,6 +180,45 @@ const FamilyNode3D = ({ person, onClick }: { person: Person; onClick: () => void
         </div>
         <div className="text-gray-400 text-xs">Gen {person.generation}</div>
       </div>
+
+      {/* Add Member Buttons */}
+      {showAddButtons && (
+        <div className="absolute top-24 left-1/2 transform -translate-x-1/2 flex gap-2">
+          <button
+            className="w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full text-xs font-bold flex items-center justify-center transition-all duration-200 hover:scale-110"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddMember(person.id, 'parent');
+              setShowAddButtons(false);
+            }}
+            title="Add Parent"
+          >
+            ↑
+          </button>
+          <button
+            className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full text-xs font-bold flex items-center justify-center transition-all duration-200 hover:scale-110"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddMember(person.id, 'child');
+              setShowAddButtons(false);
+            }}
+            title="Add Child"
+          >
+            ↓
+          </button>
+          <button
+            className="w-8 h-8 bg-purple-500 hover:bg-purple-600 text-white rounded-full text-xs font-bold flex items-center justify-center transition-all duration-200 hover:scale-110"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddMember(person.id, 'spouse');
+              setShowAddButtons(false);
+            }}
+            title="Add Spouse"
+          >
+            ↔
+          </button>
+        </div>
+      )}
 
       {/* Blockchain Glow Effect */}
       {isHovered && (

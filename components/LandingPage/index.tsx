@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { VerifyBlock } from '@/components/Verify';
+import { MiniKit, WalletAuthInput } from '@worldcoin/minikit-js';
 import { useUnifiedSession } from '@/hooks/useUnifiedSession';
 
 interface LandingPageProps {
@@ -28,39 +28,101 @@ export function LandingPage({ onComplete }: LandingPageProps = {}) {
     }
   }, [unifiedSession.status, unifiedSession.user, router, onComplete]);
 
-  const handleVerificationSuccess = async (result: any) => {
-    console.log('LandingPage: World ID verification successful', result);
-    setIsLoading(true);
+  const signInWithWallet = async () => {
+    console.log('🌐 Starting Wallet Auth (Sign in with Ethereum)...');
     
+    if (!MiniKit.isInstalled()) {
+      console.error('❌ MiniKit not installed');
+      setError('World App is required for authentication');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
     try {
-      // Store user data and redirect to quiz
-      if (result.nullifier_hash) {
-        localStorage.setItem('worldcoin_user_id', result.nullifier_hash);
-        localStorage.setItem('worldIdUser', JSON.stringify({
-          id: result.nullifier_hash,
-          isVerified: true,
-          verificationLevel: result.verification_level || 'orb'
-        }));
+      // Step 1: Get nonce from backend
+      console.log('📡 Fetching nonce from backend...');
+      const res = await fetch('/api/nonce');
+      const { nonce } = await res.json();
+      console.log('✅ Nonce received:', nonce);
+
+      // Step 2: Call walletAuth command
+      console.log('🔐 Calling walletAuth command...');
+      const { commandPayload: generateMessageResult, finalPayload } = await MiniKit.commandsAsync.walletAuth({
+        nonce: nonce,
+        requestId: 'worldtree-signin',
+        expirationTime: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        notBefore: new Date(new Date().getTime() - 24 * 60 * 60 * 1000), // 1 day ago
+        statement: 'Sign in to WorldTree - Your Family Heritage Platform',
+      });
+
+      console.log('📋 Wallet auth result:', finalPayload);
+
+      if (finalPayload.status === 'error') {
+        console.error('❌ Wallet auth command failed:', finalPayload);
+        setError('Authentication failed. Please try again.');
+        setIsLoading(false);
+        return;
       }
-      
-      console.log('LandingPage: Verification complete, calling onComplete callback');
-      if (onComplete) {
-        onComplete();
+
+      // Step 3: Verify the response in backend
+      console.log('🔍 Verifying SIWE response in backend...');
+      const response = await fetch('/api/complete-siwe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          payload: finalPayload,
+          nonce,
+          username: MiniKit.user?.username, // Get username from MiniKit
+        }),
+      });
+
+      const verifyResult = await response.json();
+      console.log('✅ Backend verification result:', verifyResult);
+
+      if (verifyResult.status === 'success' && verifyResult.isValid) {
+        console.log('🎉 Wallet authentication successful!');
+        
+        // Store user data
+        const walletAddress = finalPayload.address;
+        const username = MiniKit.user?.username || `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+        
+        localStorage.setItem('worldcoin_user_id', walletAddress);
+        localStorage.setItem('worldcoin_username', username);
+        localStorage.setItem('worldcoin_wallet_address', walletAddress);
+        localStorage.setItem('worldIdUser', JSON.stringify({
+          id: walletAddress,
+          name: username,
+          isVerified: true,
+          walletAddress: walletAddress,
+          authMethod: 'wallet'
+        }));
+
+        console.log('💾 User data stored:', {
+          id: walletAddress,
+          name: username,
+          isVerified: true
+        });
+
+        // Complete the flow
+        if (onComplete) {
+          onComplete();
+        } else {
+          router.push('/quiz');
+        }
       } else {
-        router.push('/quiz');
+        console.error('❌ Backend verification failed:', verifyResult);
+        setError(verifyResult.message || 'Authentication verification failed');
       }
     } catch (error) {
-      console.error('LandingPage: Error handling verification success:', error);
-      setError('Failed to complete verification. Please try again.');
+      console.error('❌ Wallet auth error:', error);
+      setError('Authentication failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleVerificationError = (error: any) => {
-    console.error('LandingPage: World ID verification failed', error);
-    setError('Verification failed. Please try again.');
-    setIsLoading(false);
   };
 
   if (unifiedSession.status === 'loading') {
@@ -110,7 +172,7 @@ export function LandingPage({ onComplete }: LandingPageProps = {}) {
           transition={{ delay: 0.4 }}
           className="text-gray-300 mb-8"
         >
-          Verify your identity with World ID to begin your family tree journey
+          Sign in with your Ethereum wallet to begin your family tree journey
         </motion.p>
 
         {error && (
@@ -128,11 +190,22 @@ export function LandingPage({ onComplete }: LandingPageProps = {}) {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          <VerifyBlock 
-            action="worldtree-signin"
-            onSuccess={handleVerificationSuccess}
-            onError={handleVerificationError}
-          />
+          <button
+            onClick={signInWithWallet}
+            disabled={isLoading}
+            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isLoading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Signing in...
+              </>
+            ) : (
+              <>
+                🔐 Sign in with Ethereum
+              </>
+            )}
+          </button>
         </motion.div>
 
         {isLoading && (
@@ -142,7 +215,7 @@ export function LandingPage({ onComplete }: LandingPageProps = {}) {
             className="mt-4 text-gray-400"
           >
             <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-            <p className="text-sm">Completing verification...</p>
+            <p className="text-sm">Completing authentication...</p>
           </motion.div>
         )}
 

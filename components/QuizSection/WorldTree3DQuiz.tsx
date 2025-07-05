@@ -188,8 +188,8 @@ export default function WorldTree3DQuiz({ onComplete }: QuizProps) {
       if (onComplete) {
         onComplete(answers)
       } else {
-        // Default behavior - redirect to results/mint page
-        router.push('/quiz/mint')
+        // Default behavior - redirect to tree page
+        router.push('/tree')
       }
     } catch (error) {
       console.error('WorldTree Quiz: Error submitting answers', error)
