@@ -1,0 +1,535 @@
+// This is your Prisma schema file for WorldTree Genealogy App
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================
+// USER MANAGEMENT
+// =====================================================
+
+model User {
+  id                String            @id @default(cuid())
+  worldcoinId       String?           @unique
+  email             String?           @unique
+  name              String?
+  username          String?           @unique
+  walletAddress     String?           @unique
+  isVerified        Boolean           @default(false)
+  
+  // Profile Information
+  avatar            String?
+  bio               String?
+  region            String?
+  preferences       Json?
+  
+  // Genealogy Experience
+  genealogyExperience ExperienceLevel @default(BEGINNER)
+  researchGoals     Json?             // Array of research goals
+  
+  // Gamification
+  heritagePoints    Int               @default(0)
+  level             Int               @default(1)
+  badges            Json?             // Array of badges
+  
+  // Onboarding
+  onboardingCompleted Boolean         @default(false)
+  hasCompletedQuiz  Boolean           @default(false)
+  
+  // Badge Minting Status
+  hasMintedBadge    Boolean           @default(false)
+  badgeTransactionId String?
+  badgeMintedAt     DateTime?
+  
+  // Timestamps
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  lastActiveAt      DateTime          @default(now())
+  
+  // Relations
+  familyTrees       FamilyTree[]
+  familyMembers     FamilyMember[]
+  dnaUploads        DNAUpload[]
+  researchLogs      ResearchLog[]
+  userActivities    UserActivity[]
+  badgeMints        BadgeMint[]
+  notifications     Notification[]
+  
+  @@map("users")
+  @@index([email])
+  @@index([username])
+  @@index([worldcoinId])
+}
+
+// =====================================================
+// FAMILY TREE & GENEALOGY
+// =====================================================
+
+model FamilyTree {
+  id              String          @id @default(cuid())
+  userId          String
+  name            String
+  description     String?
+  isPrivate       Boolean         @default(false)
+  
+  // Tree metadata
+  rootPersonId    String?
+  generations     Int             @default(1)
+  totalMembers    Int             @default(0)
+  
+  // Collaboration
+  collaborators   Json?           // Array of user IDs
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  // Relations
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  members         FamilyMember[]
+  relationships   FamilyRelationship[]
+  
+  @@map("family_trees")
+  @@index([userId])
+}
+
+model FamilyMember {
+  id              String          @id @default(cuid())
+  treeId          String
+  userId          String
+  
+  // Basic Information
+  firstName       String
+  lastName        String?
+  maidenName      String?
+  nicknames       Json?           // Array of nicknames
+  
+  // Demographics
+  gender          Gender?
+  birthDate       DateTime?
+  birthPlace      String?
+  deathDate       DateTime?
+  deathPlace      String?
+  isLiving        Boolean         @default(true)
+  
+  // Additional Information
+  occupation      String?
+  education       String?
+  religion        String?
+  notes           String?
+  
+  // Sources & Media
+  sources         Json?           // Array of source references
+  photos          Json?           // Array of photo URLs
+  documents       Json?           // Array of document URLs
+  
+  // 3D Positioning
+  x               Float           @default(0)
+  y               Float           @default(0)
+  z               Float           @default(0)
+  
+  // Metadata
+  confidence      ConfidenceLevel @default(MEDIUM)
+  isVerified      Boolean         @default(false)
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  // Relations
+  tree            FamilyTree      @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Relationships
+  parentRelationships    FamilyRelationship[] @relation("ParentMember")
+  childRelationships     FamilyRelationship[] @relation("ChildMember")
+  
+  // DNA Matches
+  dnaMatches      DNAMatch[]      @relation("Person1")
+  dnaMatches2     DNAMatch[]      @relation("Person2")
+  
+  @@map("family_members")
+  @@index([treeId])
+  @@index([userId])
+  @@index([firstName, lastName])
+  @@index([birthDate])
+}
+
+model FamilyRelationship {
+  id              String          @id @default(cuid())
+  treeId          String
+  
+  // Relationship participants
+  parentId        String
+  childId         String
+  relationshipType RelationshipType
+  
+  // Relationship details
+  startDate       DateTime?       // Marriage date, adoption date, etc.
+  endDate         DateTime?       // Divorce date, etc.
+  place           String?
+  
+  // Metadata
+  confidence      ConfidenceLevel @default(MEDIUM)
+  sources         Json?           // Array of sources
+  notes           String?
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  // Relations
+  tree            FamilyTree      @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  parent          FamilyMember    @relation("ParentMember", fields: [parentId], references: [id], onDelete: Cascade)
+  child           FamilyMember    @relation("ChildMember", fields: [childId], references: [id], onDelete: Cascade)
+  
+  @@map("family_relationships")
+  @@index([treeId])
+  @@index([parentId])
+  @@index([childId])
+  @@index([relationshipType])
+}
+
+// =====================================================
+// DNA & GENETIC DATA
+// =====================================================
+
+model DNAUpload {
+  id              String          @id @default(cuid())
+  userId          String
+  
+  // File information
+  filename        String
+  originalName    String
+  fileSize        Int
+  fileType        DNAFileType
+  
+  // Processing status
+  status          ProcessingStatus @default(PENDING)
+  processedAt     DateTime?
+  
+  // DNA Company info
+  testingCompany  String?         // 23andMe, AncestryDNA, etc.
+  testDate        DateTime?
+  
+  // Results summary
+  totalSNPs       Int?
+  ethnicity       Json?           // Ethnicity breakdown
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  // Relations
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matches         DNAMatch[]
+  
+  @@map("dna_uploads")
+  @@index([userId])
+  @@index([status])
+}
+
+model DNAMatch {
+  id              String          @id @default(cuid())
+  uploadId        String
+  
+  // Match participants
+  person1Id       String
+  person2Id       String
+  
+  // Match details
+  sharedCM        Float?          // Shared centiMorgans
+  sharedSegments  Int?
+  longestSegment  Float?
+  
+  // Relationship estimation
+  estimatedRelationship String?
+  confidence      Float?          // 0-1 confidence score
+  
+  // Match metadata
+  matchDate       DateTime        @default(now())
+  isReviewed      Boolean         @default(false)
+  notes           String?
+  
+  // Relations
+  upload          DNAUpload       @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  person1         FamilyMember    @relation("Person1", fields: [person1Id], references: [id], onDelete: Cascade)
+  person2         FamilyMember    @relation("Person2", fields: [person2Id], references: [id], onDelete: Cascade)
+  
+  @@map("dna_matches")
+  @@index([uploadId])
+  @@index([person1Id])
+  @@index([person2Id])
+  @@index([sharedCM])
+}
+
+// =====================================================
+// RESEARCH & SOURCES
+// =====================================================
+
+model ResearchLog {
+  id              String          @id @default(cuid())
+  userId          String
+  
+  // Research details
+  title           String
+  description     String?
+  researchType    ResearchType
+  
+  // Target information
+  targetPersonId  String?
+  targetLocation  String?
+  targetTimeframe String?
+  
+  // Progress
+  status          ResearchStatus  @default(ACTIVE)
+  progress        Int             @default(0)    // 0-100
+  
+  // Findings
+  findings        Json?           // Array of findings
+  sources         Json?           // Array of source references
+  
+  // Metadata
+  priority        Priority        @default(MEDIUM)
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  // Relations
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("research_logs")
+  @@index([userId])
+  @@index([status])
+  @@index([researchType])
+}
+
+// =====================================================
+// ACTIVITIES & NOTIFICATIONS
+// =====================================================
+
+model UserActivity {
+  id              String          @id @default(cuid())
+  userId          String
+  activityType    ActivityType
+  description     String
+  
+  // Points & Rewards
+  heritagePointsEarned Int          @default(0)
+  
+  // Metadata
+  metadata        Json?
+  
+  createdAt       DateTime        @default(now())
+  
+  // Relations
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("user_activities")
+  @@index([userId])
+  @@index([activityType])
+  @@index([createdAt])
+}
+
+model Notification {
+  id              String          @id @default(cuid())
+  userId          String
+  type            NotificationType
+  title           String
+  message         String
+  
+  // Status
+  isRead          Boolean         @default(false)
+  isArchived      Boolean         @default(false)
+  
+  // Metadata
+  relatedId       String?         // ID of related entity
+  metadata        Json?
+  
+  createdAt       DateTime        @default(now())
+  
+  // Relations
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("notifications")
+  @@index([userId])
+  @@index([type])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+// =====================================================
+// BADGE MINTING
+// =====================================================
+
+model BadgeMint {
+  id              String          @id @default(cuid())
+  userId          String
+  badgeName       String
+  badgeType       String          @default("HeritageExplorer")
+  
+  // Blockchain data
+  contractAddress String
+  tokenId         String
+  transactionId   String          @unique
+  blockNumber     String?
+  status          MintStatus      @default(PENDING)
+  
+  // Metadata
+  nullifierHash   String?
+  userAddress     String
+  network         String          @default("World Chain Sepolia")
+  
+  mintedAt        DateTime        @default(now())
+  confirmedAt     DateTime?
+  
+  // Relations
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("badge_mints")
+  @@index([userId])
+  @@index([transactionId])
+  @@index([status])
+}
+
+// =====================================================
+// ENUMS
+// =====================================================
+
+enum ExperienceLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
+enum RelationshipType {
+  PARENT_CHILD
+  SPOUSE
+  SIBLING
+  PARTNER
+  ADOPTION
+  GUARDIAN
+  STEPPARENT
+  STEPCHILD
+  STEPSIBLING
+  HALF_SIBLING
+  GRANDPARENT_GRANDCHILD
+  AUNT_UNCLE_NIECE_NEPHEW
+  COUSIN
+  OTHER
+}
+
+enum ConfidenceLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CONFIRMED
+}
+
+enum DNAFileType {
+  GEDCOM
+  CSV
+  RAW_DNA
+  ANCESTRY_DNA
+  TWENTY_THREE_AND_ME
+  FAMILY_TREE_DNA
+  MY_HERITAGE
+  LIVING_DNA
+  OTHER
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ResearchType {
+  BIRTH_RECORDS
+  DEATH_RECORDS
+  MARRIAGE_RECORDS
+  CENSUS_RECORDS
+  MILITARY_RECORDS
+  IMMIGRATION_RECORDS
+  LAND_RECORDS
+  OBITUARIES
+  NEWSPAPER_ARTICLES
+  CHURCH_RECORDS
+  SCHOOL_RECORDS
+  CEMETERY_RECORDS
+  DNA_ANALYSIS
+  PHOTO_RESEARCH
+  ORAL_HISTORY
+  OTHER
+}
+
+enum ResearchStatus {
+  ACTIVE
+  COMPLETED
+  ON_HOLD
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ActivityType {
+  TREE_CREATED
+  MEMBER_ADDED
+  MEMBER_UPDATED
+  RELATIONSHIP_ADDED
+  DNA_UPLOADED
+  DNA_PROCESSED
+  MATCH_FOUND
+  RESEARCH_STARTED
+  RESEARCH_COMPLETED
+  BADGE_MINTED
+  LEVEL_UP
+  QUIZ_COMPLETED
+  ONBOARDING_COMPLETED
+  PROFILE_UPDATED
+  COLLABORATION_INVITED
+  COLLABORATION_JOINED
+  FAMILY_STORY_ADDED
+  PHOTO_UPLOADED
+  DOCUMENT_UPLOADED
+  BREAKTHROUGH_MADE
+  MILESTONE_REACHED
+}
+
+enum NotificationType {
+  WELCOME
+  DNA_MATCH_FOUND
+  RESEARCH_SUGGESTION
+  COLLABORATION_INVITE
+  BADGE_EARNED
+  LEVEL_UP
+  MILESTONE_REACHED
+  FAMILY_STORY_SHARED
+  PHOTO_TAGGED
+  DOCUMENT_SHARED
+  REMINDER
+  SYSTEM_UPDATE
+  PRIVACY_UPDATE
+}
+
+enum MintStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
