@@ -8,7 +8,8 @@ import {
   Cylinder, 
   Html,
   Float,
-  Points
+  Points,
+  Line
 } from '@react-three/drei'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -18,49 +19,61 @@ import { useOnboardingFeedback } from '@/hooks/useOnboardingFeedback'
 // Main Onboarding Component
 export default function WorldTreeOnboarding({ onComplete }: { onComplete: () => void }) {
   const [currentStep, setCurrentStep] = useState(0)
-  const [isInteractive, setIsInteractive] = useState(false)
+  const [isWaitingForClick, setIsWaitingForClick] = useState(false)
   const { playFeedback } = useOnboardingFeedback()
 
   const steps = [
-    { component: DNAHelixLoading, duration: 3000, text: "Your story begins in your DNA...", sound: 'dna-form' },
-    { component: BlockchainTransformation, duration: 3000, text: "...and lives forever on the blockchain", sound: 'block-chain' },
-    { component: WorldTreeEmergence, duration: 4000, text: "Welcome to WorldTree - Where families grow on-chain", sound: 'tree-grow' },
-    { component: HeritageDiscovery, interactive: true, text: "Every family has untold stories", sound: 'story-discover' },
-    { component: SecurityShieldFormation, interactive: true, text: "Your legacy, verified by you", sound: 'security-shield' },
-    { component: PlatformTour, interactive: true, text: "Build, share, and preserve your family history", sound: 'step-complete' },
-    { component: FamilyCreation, interactive: true, text: "Start your eternal family tree", sound: 'genesis-create' }
+    { 
+      component: DNAIntroduction, 
+      text: "Your DNA contains the blueprint of your family's story", 
+      subtitle: "Every cell carries generations of heritage",
+      sound: 'dna-form',
+      interactive: true
+    },
+    { 
+      component: DNAHelixFormation, 
+      text: "Your genetic code is unique and precious", 
+      subtitle: "Like a fingerprint, no two are exactly alike",
+      sound: 'block-chain',
+      interactive: true
+    },
+    { 
+      component: TreeSeedling, 
+      text: "From your DNA, a family tree begins to grow", 
+      subtitle: "Each branch represents a connection, each leaf a story",
+      sound: 'tree-grow',
+      interactive: true
+    },
+    { 
+      component: FamilyTreeGrowth, 
+      text: "Your family tree grows stronger with each connection", 
+      subtitle: "Preserve your heritage for future generations",
+      sound: 'story-discover',
+      interactive: true
+    },
+    { 
+      component: SecurityVerification, 
+      text: "Your family data is secured with World ID", 
+      subtitle: "Zero-knowledge proof protects your privacy",
+      sound: 'security-shield',
+      interactive: true
+    },
+    { 
+      component: ReadyToBegin, 
+      text: "You're ready to build your family tree", 
+      subtitle: "Start your journey of discovery",
+      sound: 'genesis-create',
+      interactive: true
+    }
   ]
 
-  useEffect(() => {
-    // Play step sound when entering a new step
-    const currentStepData = steps[currentStep]
-    if (currentStepData?.sound) {
-      setTimeout(() => {
-        playFeedback(currentStepData.sound, false) // Audio only, no haptic for automatic steps
-      }, 500)
-    }
-
-    if (!steps[currentStep]?.interactive) {
-      const timer = setTimeout(() => {
-        if (currentStep < steps.length - 1) {
-          playFeedback('step-complete')
-          setCurrentStep(currentStep + 1)
-        } else {
-          playFeedback('success')
-          onComplete()
-        }
-      }, steps[currentStep]?.duration || 3000)
-
-      return () => clearTimeout(timer)
-    }
-  }, [currentStep, onComplete, playFeedback])
-
-  const handleNextStep = () => {
+  const handleStepComplete = () => {
     console.log(`WorldTree Onboarding: Step ${currentStep + 1} completed`)
     playFeedback('step-complete')
     
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1)
+      setIsWaitingForClick(false)
     } else {
       console.log('WorldTree Onboarding: Flow completed')
       playFeedback('success')
@@ -68,27 +81,36 @@ export default function WorldTreeOnboarding({ onComplete }: { onComplete: () => 
     }
   }
 
+  const handleScreenClick = () => {
+    if (isWaitingForClick) {
+      handleStepComplete()
+    }
+  }
+
   const CurrentStepComponent = steps[currentStep]?.component
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden">
+    <div className="fixed inset-0 bg-gradient-to-br from-black via-blue-900 to-black overflow-hidden">
       {/* 3D Scene */}
       <Canvas
         camera={{ position: [0, 0, 15], fov: 60 }}
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
+        onClick={handleScreenClick}
+        className="cursor-pointer"
       >
-        <ambientLight intensity={0.3} />
-        <pointLight position={[10, 10, 10]} intensity={1} color="#00ff88" />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} color="#4ecdc4" />
+        <ambientLight intensity={0.4} />
+        <pointLight position={[10, 10, 10]} intensity={1.2} color="#00ff88" />
+        <pointLight position={[-10, -10, -10]} intensity={0.8} color="#4ecdc4" />
         
         <CurrentStepComponent 
-          onComplete={handleNextStep}
+          onComplete={handleStepComplete}
           playFeedback={playFeedback}
+          setWaitingForClick={setIsWaitingForClick}
         />
 
         <EffectComposer>
-          <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.9} intensity={1.5} />
+          <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.9} intensity={1.2} />
         </EffectComposer>
       </Canvas>
 
@@ -97,8 +119,8 @@ export default function WorldTreeOnboarding({ onComplete }: { onComplete: () => 
         currentStep={currentStep}
         totalSteps={steps.length}
         text={steps[currentStep]?.text || ''}
-        isInteractive={steps[currentStep]?.interactive || false}
-        onNext={handleNextStep}
+        subtitle={steps[currentStep]?.subtitle || ''}
+        isWaitingForClick={isWaitingForClick}
         onSkip={() => {
           playFeedback('step-complete')
           onComplete()
@@ -108,47 +130,144 @@ export default function WorldTreeOnboarding({ onComplete }: { onComplete: () => 
   )
 }
 
-// Step 1: DNA Helix Loading
-function DNAHelixLoading({ onComplete, playFeedback }: { onComplete: () => void, playFeedback?: (type: string) => void }) {
+// Step 1: DNA Introduction - Clean, focused DNA visualization
+function DNAIntroduction({ onComplete, playFeedback, setWaitingForClick }: { 
+  onComplete: () => void, 
+  playFeedback?: (type: string) => void,
+  setWaitingForClick: (waiting: boolean) => void
+}) {
   const groupRef = useRef<THREE.Group>(null)
-  const [progress, setProgress] = useState(0)
+  const [animationComplete, setAnimationComplete] = useState(false)
 
-  // Nucleotide colors: A-pink, T-cyan, G-green, C-orange
-  const nucleotideColors = {
-    A: "#ff6b9d", // pink
-    T: "#4ecdc4", // cyan
-    G: "#00ff88", // green
-    C: "#ff9500"  // orange
-  }
-
-  // Base pair sequence (A-T, G-C)
-  const basePairs = ['A-T', 'G-C', 'T-A', 'C-G']
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAnimationComplete(true)
+      setWaitingForClick(true)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [setWaitingForClick])
 
   useFrame((state) => {
     if (groupRef.current) {
-      groupRef.current.rotation.y = state.clock.elapsedTime * 0.5
-      
-      // Animate formation progress over 3 seconds
-      const newProgress = Math.min((state.clock.elapsedTime / 3) * 100, 100)
-      setProgress(newProgress)
+      groupRef.current.rotation.y = state.clock.elapsedTime * 0.3
     }
   })
 
   return (
     <group ref={groupRef}>
-      {/* DNA Double Helix with proper nucleotide colors */}
-      {Array.from({ length: 48 }).map((_, i) => {
-        const y = (i - 24) * 0.3
-        const angle = (i / 48) * Math.PI * 4
+      {/* Central DNA Helix */}
+      <group position={[0, 0, 0]}>
+        {Array.from({ length: 20 }).map((_, i) => {
+          const y = (i - 10) * 0.4
+          const angle = (i / 20) * Math.PI * 2
+          const radius = 1.5
+          
+          return (
+            <group key={i}>
+              {/* Left strand */}
+              <Sphere
+                position={[
+                  Math.cos(angle) * radius,
+                  y,
+                  Math.sin(angle) * radius
+                ]}
+                args={[0.15, 16, 16]}
+              >
+                <meshStandardMaterial 
+                  color={i % 2 === 0 ? "#ff6b9d" : "#4ecdc4"}
+                  emissive={i % 2 === 0 ? "#ff6b9d" : "#4ecdc4"}
+                  emissiveIntensity={0.3}
+                />
+              </Sphere>
+
+              {/* Right strand */}
+              <Sphere
+                position={[
+                  Math.cos(angle + Math.PI) * radius,
+                  y,
+                  Math.sin(angle + Math.PI) * radius
+                ]}
+                args={[0.15, 16, 16]}
+              >
+                <meshStandardMaterial 
+                  color={i % 2 === 0 ? "#4ecdc4" : "#ff6b9d"}
+                  emissive={i % 2 === 0 ? "#4ecdc4" : "#ff6b9d"}
+                  emissiveIntensity={0.3}
+                />
+              </Sphere>
+
+              {/* Base pair connections */}
+              <Cylinder
+                position={[0, y, 0]}
+                args={[0.02, 0.02, radius * 2]}
+                rotation={[0, 0, Math.PI / 2]}
+              >
+                <meshStandardMaterial 
+                  color="#ffffff" 
+                  emissive="#ffffff"
+                  emissiveIntensity={0.2}
+                  transparent
+                  opacity={0.6}
+                />
+              </Cylinder>
+            </group>
+          )
+        })}
+      </group>
+
+      {/* Floating particles representing genetic information */}
+      <FloatingParticles count={30} color="#00ff88" radius={8} />
+    </group>
+  )
+}
+
+// Step 2: DNA Helix Formation - More detailed DNA structure
+function DNAHelixFormation({ onComplete, playFeedback, setWaitingForClick }: { 
+  onComplete: () => void, 
+  playFeedback?: (type: string) => void,
+  setWaitingForClick: (waiting: boolean) => void
+}) {
+  const groupRef = useRef<THREE.Group>(null)
+  const [formationProgress, setFormationProgress] = useState(0)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFormationProgress(1)
+      setWaitingForClick(true)
+    }, 3000)
+    return () => clearTimeout(timer)
+  }, [setWaitingForClick])
+
+  useFrame((state) => {
+    if (groupRef.current) {
+      groupRef.current.rotation.y = state.clock.elapsedTime * 0.2
+    }
+  })
+
+  const nucleotideColors = {
+    A: "#ff6b9d", // Adenine - pink
+    T: "#4ecdc4", // Thymine - cyan
+    G: "#00ff88", // Guanine - green
+    C: "#ff9500"  // Cytosine - orange
+  }
+
+  const basePairs = ['A-T', 'G-C', 'T-A', 'C-G', 'A-T', 'G-C']
+
+  return (
+    <group ref={groupRef}>
+      {/* Enhanced DNA Double Helix */}
+      {Array.from({ length: 32 }).map((_, i) => {
+        const y = (i - 16) * 0.3
+        const angle = (i / 32) * Math.PI * 3
         const radius = 2
-        const opacity = progress > (i / 48) * 100 ? 1 : 0.1
+        const opacity = formationProgress > (i / 32) ? 1 : 0.1
         
-        const basePair = basePairs[i % 4]
+        const basePair = basePairs[i % basePairs.length]
         const [nucleotide1, nucleotide2] = basePair.split('-')
 
         return (
           <group key={i}>
-            {/* Left strand nucleotide */}
+            {/* Left strand */}
             <Sphere
               position={[
                 Math.cos(angle) * radius,
@@ -166,7 +285,7 @@ function DNAHelixLoading({ onComplete, playFeedback }: { onComplete: () => void,
               />
             </Sphere>
 
-            {/* Right strand nucleotide */}
+            {/* Right strand */}
             <Sphere
               position={[
                 Math.cos(angle + Math.PI) * radius,
@@ -184,1347 +303,486 @@ function DNAHelixLoading({ onComplete, playFeedback }: { onComplete: () => void,
               />
             </Sphere>
 
-            {/* Base pair connections */}
-            {i % 2 === 0 && (
-              <Cylinder
-                position={[0, y, 0]}
-                args={[0.02, 0.02, radius * 2]}
-                rotation={[0, 0, Math.PI / 2]}
-              >
-                <meshStandardMaterial 
-                  color="#ffffff" 
-                  emissive="#ffffff"
-                  emissiveIntensity={0.1}
-                  transparent
-                  opacity={opacity * 0.7}
-                />
-              </Cylinder>
-            )}
-          </group>
-        )
-      })}
-
-      {/* Scattered particles materializing into DNA */}
-      <FloatingParticles count={200} color="#4ecdc4" radius={8} />
-      <FloatingParticles count={200} color="#00ff88" radius={8} />
-    </group>
-  )
-}
-
-// Step 2: Blockchain Transformation
-function BlockchainTransformation({ onComplete, playFeedback }: { onComplete: () => void, playFeedback?: (type: string) => void }) {
-  const groupRef = useRef<THREE.Group>(null)
-  const [transformProgress, setTransformProgress] = useState(0)
-  const [blockFormationStep, setBlockFormationStep] = useState(0)
-
-  // Blockchain block colors
-  const blockColors = ["#ffd700", "#00ff88", "#4ecdc4", "#ff6b9d", "#ff9500"]
-
-  useFrame((state) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y = state.clock.elapsedTime * 0.2
-      
-      const progress = Math.min(state.clock.elapsedTime / 3, 1)
-      setTransformProgress(progress)
-      
-      // Block formation steps
-      const step = Math.floor(progress * 4)
-      setBlockFormationStep(step)
-    }
-  })
-
-  console.log(`BlockchainTransformation: Progress ${(transformProgress * 100).toFixed(1)}%, Step ${blockFormationStep}`)
-
-  return (
-    <group ref={groupRef}>
-      {/* DNA to Data Transformation Particles */}
-      {blockFormationStep >= 1 && (
-        <FloatingParticles count={30} color="#ffffff" radius={6} />
-      )}
-
-      {/* Blockchain Formation */}
-      {Array.from({ length: 8 }).map((_, i) => {
-        const isVisible = transformProgress > i / 8
-        const y = (i - 4) * 1.8
-        const scale = isVisible ? 1 : 0
-        const opacity = isVisible ? 0.9 : 0
-        const color = blockColors[i % blockColors.length]
-
-        return (
-          <group key={i}>
-            {/* Blockchain Block */}
-            <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.2}>
-              <mesh position={[0, y, 0]} scale={scale}>
-                <boxGeometry args={[1.5, 1.2, 1.2]} />
-                <meshStandardMaterial 
-                  color={color}
-                  emissive={color}
-                  emissiveIntensity={0.3}
-                  transparent
-                  opacity={opacity}
-                />
-              </mesh>
-            </Float>
-
-            {/* Block Data Visualization */}
-            {isVisible && blockFormationStep >= 2 && (
-              <group position={[0, y, 0]}>
-                {/* Data cubes inside block */}
-                {Array.from({ length: 6 }).map((_, j) => {
-                  const dataAngle = (j / 6) * Math.PI * 2
-                  const dataRadius = 0.4
-                  
-                  return (
-                    <mesh
-                      key={j}
-                      position={[
-                        Math.cos(dataAngle) * dataRadius,
-                        0,
-                        Math.sin(dataAngle) * dataRadius
-                      ]}
-                      scale={0.3}
-                    >
-                      <boxGeometry args={[0.2, 0.2, 0.2]} />
-                      <meshStandardMaterial 
-                        color="#ffffff"
-                        emissive="#ffffff"
-                        emissiveIntensity={0.5}
-                        transparent
-                        opacity={0.8}
-                      />
-                    </mesh>
-                  )
-                })}
-              </group>
-            )}
-
-            {/* Chain Links */}
-            {i < 7 && isVisible && (
-              <Cylinder
-                position={[0, y + 0.9, 0]}
-                args={[0.08, 0.08, 0.6]}
-              >
-                <meshStandardMaterial 
-                  color="#4ecdc4" 
-                  emissive="#4ecdc4"
-                  emissiveIntensity={0.4}
-                  transparent
-                  opacity={opacity}
-                />
-              </Cylinder>
-            )}
-          </group>
-        )
-      })}
-
-      {/* Blockchain Hash Generation */}
-      {transformProgress > 0.6 && (
-        <group position={[0, -8, 0]}>
-          <Text
-            fontSize={0.4}
-            color="#ffffff"
-            anchorX="center"
-            anchorY="middle"
-          >
-            Genesis Block Created
-          </Text>
-          <Text
-            position={[0, -0.8, 0]}
-            fontSize={0.3}
-            color="#4ecdc4"
-            anchorX="center"
-            anchorY="middle"
-          >
-            Hash: 0x{Math.random().toString(16).substring(2, 18)}...
-          </Text>
-        </group>
-      )}
-
-      {/* Security Shield Formation Preview */}
-      {transformProgress > 0.8 && (
-        <group position={[0, 8, 0]}>
-          <Float speed={2} rotationIntensity={0.3} floatIntensity={0.3}>
-            <mesh scale={[2, 2, 0.2]}>
-              <boxGeometry args={[1, 1.2, 0.1]} />
+            {/* Hydrogen bonds */}
+            <Cylinder
+              position={[0, y, 0]}
+              args={[0.015, 0.015, radius * 2]}
+              rotation={[0, 0, Math.PI / 2]}
+            >
               <meshStandardMaterial 
-                color="#ffd700"
-                emissive="#ffd700"
-                emissiveIntensity={0.5}
+                color="#ffffff" 
+                emissive="#ffffff"
+                emissiveIntensity={0.3}
                 transparent
-                opacity={0.6}
+                opacity={opacity * 0.8}
               />
-            </mesh>
-          </Float>
-          <Text
-            position={[0, -1.5, 0]}
-            fontSize={0.3}
-            color="#ffd700"
-            anchorX="center"
-            anchorY="middle"
-          >
-            🛡️ Immutable Legacy
-          </Text>
-        </group>
-      )}
+            </Cylinder>
+          </group>
+        )
+      })}
+
+      {/* Genetic information particles */}
+      <FloatingParticles count={40} color="#00ff88" radius={10} />
     </group>
   )
 }
 
-// Step 3: World Tree Emergence
-function WorldTreeEmergence({ onComplete, playFeedback }: { onComplete: () => void, playFeedback?: (type: string) => void }) {
+// Step 3: Tree Seedling - DNA transforms into a tree seed
+function TreeSeedling({ onComplete, playFeedback, setWaitingForClick }: { 
+  onComplete: () => void, 
+  playFeedback?: (type: string) => void,
+  setWaitingForClick: (waiting: boolean) => void
+}) {
   const groupRef = useRef<THREE.Group>(null)
   const [growthProgress, setGrowthProgress] = useState(0)
-  const [familyNodes, setFamilyNodes] = useState(0)
 
-  const familyColors = ["#ffd700", "#ff6b9d", "#4ecdc4", "#00ff88", "#ff9500"]
-
-  useFrame((state) => {
-    if (groupRef.current) {
-      const progress = Math.min(state.clock.elapsedTime / 4, 1)
-      setGrowthProgress(progress)
-      
-      // Family nodes appear progressively
-      const nodeCount = Math.floor(progress * 5)
-      setFamilyNodes(nodeCount)
-      
-      // Gentle swaying
-      groupRef.current.rotation.z = Math.sin(state.clock.elapsedTime) * 0.05
-    }
-  })
-
-  console.log(`WorldTreeEmergence: Growth ${(growthProgress * 100).toFixed(1)}%, Family Nodes: ${familyNodes}`)
-
-  return (
-    <group ref={groupRef}>
-      {/* Growing Energy Particles */}
-      {growthProgress > 0.2 && (
-        <FloatingParticles count={40} color="#00ff88" radius={8} />
-      )}
-
-      {/* Tree trunk with blockchain texture */}
-      <Cylinder
-        position={[0, -3, 0]}
-        args={[1, 1.5, 6 * growthProgress]}
-      >
-        <meshStandardMaterial 
-          color="#8B4513" 
-          emissive="#4a2c17"
-          emissiveIntensity={0.1}
-        />
-      </Cylinder>
-
-      {/* Blockchain roots foundation */}
-      {growthProgress > 0.3 && (
-        <group position={[0, -6, 0]}>
-          {Array.from({ length: 8 }).map((_, i) => {
-            const angle = (i / 8) * Math.PI * 2
-            const length = 2 + i * 0.3
-            const isVisible = growthProgress > 0.3 + (i / 8) * 0.2
-
-            return isVisible ? (
-              <Cylinder
-                key={i}
-                position={[
-                  Math.cos(angle) * length * 0.5,
-                  0,
-                  Math.sin(angle) * length * 0.5
-                ]}
-                args={[0.1, 0.2, length]}
-                rotation={[Math.PI / 6, angle, 0]}
-              >
-                <meshStandardMaterial 
-                  color="#4ecdc4" 
-                  emissive="#4ecdc4"
-                  emissiveIntensity={0.3}
-                />
-              </Cylinder>
-            ) : null
-          })}
-        </group>
-      )}
-
-      {/* Main Tree Structure with Family Nodes */}
-      {growthProgress > 0.5 && (
-        <group>
-          {/* Genesis Node (Center) */}
-          <Float speed={1} rotationIntensity={0.2} floatIntensity={0.2}>
-            <mesh position={[0, 0, 0]}>
-              <sphereGeometry args={[0.8, 16, 16]} />
-              <meshStandardMaterial 
-                color="#ffd700"
-                emissive="#ffd700"
-                emissiveIntensity={0.5}
-              />
-            </mesh>
-          </Float>
-
-          {/* First Generation Nodes */}
-          {familyNodes >= 2 && Array.from({ length: 2 }).map((_, i) => {
-            const angle = (i / 2) * Math.PI * 2
-            const radius = 2.5
-            const height = 2
-
-            return (
-              <Float key={`gen1-${i}`} speed={1.2} rotationIntensity={0.3} floatIntensity={0.3}>
-                <mesh position={[
-                  Math.cos(angle) * radius,
-                  height,
-                  Math.sin(angle) * radius
-                ]}>
-                  <sphereGeometry args={[0.6, 16, 16]} />
-                  <meshStandardMaterial 
-                    color={familyColors[i + 1]}
-                    emissive={familyColors[i + 1]}
-                    emissiveIntensity={0.4}
-                  />
-                </mesh>
-              </Float>
-            )
-          })}
-
-          {/* Second Generation Nodes */}
-          {familyNodes >= 4 && Array.from({ length: 4 }).map((_, i) => {
-            const angle = (i / 4) * Math.PI * 2
-            const radius = 4
-            const height = 4
-
-            return (
-              <Float key={`gen2-${i}`} speed={1.5} rotationIntensity={0.4} floatIntensity={0.4}>
-                <mesh position={[
-                  Math.cos(angle) * radius,
-                  height,
-                  Math.sin(angle) * radius
-                ]}>
-                  <sphereGeometry args={[0.4, 16, 16]} />
-                  <meshStandardMaterial 
-                    color={familyColors[i % familyColors.length]}
-                    emissive={familyColors[i % familyColors.length]}
-                    emissiveIntensity={0.3}
-                  />
-                </mesh>
-              </Float>
-            )
-          })}
-
-          {/* Connection Lines */}
-          {familyNodes >= 2 && (
-            <group>
-              {/* Genesis to First Generation */}
-              {Array.from({ length: 2 }).map((_, i) => {
-                const angle = (i / 2) * Math.PI * 2
-                const radius = 2.5
-                const height = 2
-
-                return (
-                  <Cylinder
-                    key={`conn1-${i}`}
-                    position={[
-                      Math.cos(angle) * radius * 0.5,
-                      height * 0.5,
-                      Math.sin(angle) * radius * 0.5
-                    ]}
-                    args={[0.03, 0.03, Math.sqrt(radius * radius + height * height)]}
-                    rotation={[0, angle, Math.atan2(height, radius)]}
-                  >
-                    <meshStandardMaterial 
-                      color="#ffffff"
-                      emissive="#ffffff"
-                      emissiveIntensity={0.3}
-                    />
-                  </Cylinder>
-                )
-              })}
-
-              {/* First to Second Generation */}
-              {familyNodes >= 4 && Array.from({ length: 4 }).map((_, i) => {
-                const parentAngle = Math.floor(i / 2) * Math.PI
-                const parentRadius = 2.5
-                const parentHeight = 2
-                
-                const childAngle = (i / 4) * Math.PI * 2
-                const childRadius = 4
-                const childHeight = 4
-
-                return (
-                  <Cylinder
-                    key={`conn2-${i}`}
-                    position={[
-                      (Math.cos(parentAngle) * parentRadius + Math.cos(childAngle) * childRadius) * 0.5,
-                      (parentHeight + childHeight) * 0.5,
-                      (Math.sin(parentAngle) * parentRadius + Math.sin(childAngle) * childRadius) * 0.5
-                    ]}
-                    args={[0.02, 0.02, 2]}
-                    rotation={[
-                      0,
-                      Math.atan2(
-                        Math.sin(childAngle) * childRadius - Math.sin(parentAngle) * parentRadius,
-                        Math.cos(childAngle) * childRadius - Math.cos(parentAngle) * parentRadius
-                      ),
-                      Math.atan2(childHeight - parentHeight, 2)
-                    ]}
-                  >
-                    <meshStandardMaterial 
-                      color="#4ecdc4"
-                      emissive="#4ecdc4"
-                      emissiveIntensity={0.2}
-                    />
-                  </Cylinder>
-                )
-              })}
-            </group>
-          )}
-        </group>
-      )}
-
-      {/* WorldTree Branding */}
-      {growthProgress > 0.8 && (
-        <group position={[0, 7, 0]}>
-          <Text
-            fontSize={1.5}
-            color="#ffffff"
-            anchorX="center"
-            anchorY="middle"
-          >
-            🌳 WorldTree
-          </Text>
-          <Text
-            position={[0, -1, 0]}
-            fontSize={0.4}
-            color="#4ecdc4"
-            anchorX="center"
-            anchorY="middle"
-          >
-            Where families grow on-chain
-          </Text>
-        </group>
-      )}
-
-      {/* Completion Indicator */}
-      {growthProgress > 0.95 && (
-        <group position={[0, -8, 0]}>
-          <Text
-            fontSize={0.5}
-            color="#ffd700"
-            anchorX="center"
-            anchorY="middle"
-          >
-            ✨ Tap to continue your journey
-          </Text>
-        </group>
-      )}
-    </group>
-  )
-}
-
-// Step 4: Heritage Discovery
-function HeritageDiscovery({ onComplete, playFeedback }: { onComplete: () => void, playFeedback?: (type: string) => void }) {
-  const [selectedNode, setSelectedNode] = useState<number | null>(null)
-  const [discoveredStories, setDiscoveredStories] = useState(0)
-  const [showStoryDetail, setShowStoryDetail] = useState(false)
-
-  const ancestralStories = [
-    {
-      title: "The Ocean Crossing",
-      story: "Great-grandmother Elena was a pioneer who crossed the Atlantic in 1892, carrying only a worn leather journal and dreams of a new life",
-      artifact: "📜",
-      color: "#ff6b9d",
-      year: "1892"
-    },
-    {
-      title: "Building Nations",
-      story: "Your great-grandfather Samuel helped build the first transcontinental railroad, his skilled hands connecting distant lands",
-      artifact: "⛏️",
-      color: "#ffd700",
-      year: "1869"
-    },
-    {
-      title: "Healing Hearts",
-      story: "Aunt Margaret served as a field nurse in WWII, saving countless lives with her courage and compassion",
-      artifact: "🏥",
-      color: "#4ecdc4",
-      year: "1943"
-    },
-    {
-      title: "Master Craftsmen",
-      story: "Your lineage traces back to medieval craftsmen, whose intricate stone work still stands in ancient cathedrals",
-      artifact: "⚒️",
-      color: "#00ff88",
-      year: "1340"
-    },
-    {
-      title: "New World Pioneers",
-      story: "The Williams family were among the first settlers in the New World, establishing the foundations of what would become home",
-      artifact: "🗺️",
-      color: "#ff9500",
-      year: "1620"
-    }
-  ]
-
-  const handleNodeClick = (index: number) => {
-    console.log(`Heritage Discovery: Story ${index} discovered - ${ancestralStories[index].title}`)
-    playFeedback?.('story-discover')
-    setSelectedNode(index)
-    setShowStoryDetail(true)
-    
-    if (discoveredStories <= index) {
-      setDiscoveredStories(index + 1)
-    }
-    
-    // Auto-complete after discovering 3 stories
-    if (discoveredStories >= 2 && index >= 2) {
-      setTimeout(() => {
-        console.log('Heritage Discovery: All stories discovered, proceeding to next step')
-        onComplete()
-      }, 3000)
-    }
-  }
-
-  const handleCloseStory = () => {
-    setShowStoryDetail(false)
-    setSelectedNode(null)
-  }
-
-  return (
-    <group>
-      {/* Heritage Timeline Portal */}
-      <group position={[0, 0, 0]}>
-        <Cylinder args={[0.1, 0.1, 8]} rotation={[0, 0, Math.PI / 2]}>
-          <meshStandardMaterial 
-            color="#4ecdc4" 
-            emissive="#4ecdc4"
-            emissiveIntensity={0.3}
-          />
-        </Cylinder>
-        
-        {/* Timeline markers */}
-        {ancestralStories.map((story, i) => {
-          const x = (i - 2) * 2.5
-          const isDiscovered = discoveredStories > i
-          const isSelected = selectedNode === i
-          const isAvailable = i <= discoveredStories || discoveredStories === 0
-
-          return (
-            <group key={i} position={[x, 0, 0]}>
-              {/* Story Node */}
-              <Float speed={1 + i * 0.1} rotationIntensity={0.2} floatIntensity={0.4}>
-                <mesh
-                  position={[0, 0, 0]}
-                  onClick={() => isAvailable && handleNodeClick(i)}
-                  scale={isSelected ? 1.3 : 1}
-                >
-                  <sphereGeometry args={[0.8, 16, 16]} />
-                  <meshStandardMaterial 
-                    color={isDiscovered ? story.color : isAvailable ? "#ffffff" : "#666666"}
-                    emissive={isDiscovered ? story.color : isAvailable ? "#ffffff" : "#333333"}
-                    emissiveIntensity={isSelected ? 0.8 : isAvailable ? 0.3 : 0.1}
-                    transparent
-                    opacity={isAvailable ? 1 : 0.3}
-                  />
-                </mesh>
-              </Float>
-
-              {/* Artifact Symbol */}
-              {isAvailable && (
-                <Text
-                  position={[0, 0, 0.9]}
-                  fontSize={0.6}
-                  color="#ffffff"
-                  anchorX="center"
-                  anchorY="middle"
-                >
-                  {story.artifact}
-                </Text>
-              )}
-
-              {/* Year Label */}
-              <Text
-                position={[0, -1.5, 0]}
-                fontSize={0.3}
-                color={isDiscovered ? story.color : "#ffffff"}
-                anchorX="center"
-                anchorY="middle"
-              >
-                {story.year}
-              </Text>
-
-              {/* Discovery Sparkles */}
-              {isDiscovered && (
-                <FloatingParticles count={15} color={story.color} radius={1.5} />
-              )}
-
-              {/* Connecting Lines */}
-              {i < ancestralStories.length - 1 && (
-                <Cylinder
-                  position={[1.25, 0, 0]}
-                  args={[0.02, 0.02, 1.5]}
-                  rotation={[0, 0, Math.PI / 2]}
-                >
-                  <meshStandardMaterial 
-                    color={discoveredStories > i ? story.color : "#666666"}
-                    emissive={discoveredStories > i ? story.color : "#333333"}
-                    emissiveIntensity={discoveredStories > i ? 0.3 : 0.1}
-                  />
-                </Cylinder>
-              )}
-            </group>
-          )
-        })}
-      </group>
-
-      {/* Story Detail Modal */}
-      {showStoryDetail && selectedNode !== null && (
-        <Html position={[0, 4, 0]} center>
-          <div className="bg-black bg-opacity-90 text-white p-6 rounded-lg max-w-md border-2 border-cyan-400">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-bold text-cyan-400">{ancestralStories[selectedNode].title}</h3>
-              <button 
-                onClick={handleCloseStory}
-                className="text-gray-400 hover:text-white text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            <div className="flex items-center mb-3">
-              <span className="text-2xl mr-3">{ancestralStories[selectedNode].artifact}</span>
-              <span className="text-sm text-gray-400">{ancestralStories[selectedNode].year}</span>
-            </div>
-            <p className="text-sm leading-relaxed mb-4">{ancestralStories[selectedNode].story}</p>
-            <div className="text-center">
-              <span className="text-xs text-cyan-400">✨ Story Discovered ✨</span>
-            </div>
-          </div>
-        </Html>
-      )}
-
-      {/* Progress and Instructions */}
-      <group position={[0, -4, 0]}>
-        <Text
-          fontSize={0.5}
-          color="#ffffff"
-          anchorX="center"
-          anchorY="middle"
-        >
-          📚 Discover Your Heritage Timeline
-        </Text>
-        <Text
-          position={[0, -0.8, 0]}
-          fontSize={0.4}
-          color="#4ecdc4"
-          anchorX="center"
-          anchorY="middle"
-        >
-          Stories Discovered: {discoveredStories}/5
-        </Text>
-        <Text
-          position={[0, -1.6, 0]}
-          fontSize={0.3}
-          color="#ffffff"
-          anchorX="center"
-          anchorY="middle"
-        >
-          {discoveredStories < 3 ? "Tap the glowing artifacts to unlock stories" : "🎉 Heritage timeline unlocked!"}
-        </Text>
-      </group>
-    </group>
-  )
-}
-
-// Step 5: Security Shield Formation
-function SecurityShieldFormation({ onComplete, playFeedback }: { onComplete: () => void, playFeedback?: (type: string) => void }) {
-  const groupRef = useRef<THREE.Group>(null)
-  const [shieldProgress, setShieldProgress] = useState(0)
-  const [showWorldId, setShowWorldId] = useState(false)
-  const [worldIdPulse, setWorldIdPulse] = useState(0)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setGrowthProgress(1)
+      setWaitingForClick(true)
+    }, 3000)
+    return () => clearTimeout(timer)
+  }, [setWaitingForClick])
 
   useFrame((state) => {
     if (groupRef.current) {
       groupRef.current.rotation.y = state.clock.elapsedTime * 0.1
-      
-      // Animate shield formation
-      const progress = Math.min((state.clock.elapsedTime / 3) * 100, 100)
-      setShieldProgress(progress)
-      
-      if (progress > 60 && !showWorldId) {
-        setShowWorldId(true)
-      }
-      
-      // World ID pulse effect
-      if (showWorldId) {
-        setWorldIdPulse(Math.sin(state.clock.elapsedTime * 3) * 0.2 + 1)
-      }
     }
   })
 
-  const handleAcknowledgeSecurity = () => {
-    console.log('Security Shield: User acknowledged World ID security')
-    playFeedback?.('security-shield')
-    onComplete()
-  }
-
-  console.log(`SecurityShieldFormation: Shield progress ${shieldProgress.toFixed(1)}%, World ID visible: ${showWorldId}`)
-
   return (
     <group ref={groupRef}>
-      {/* Enhanced Central Family Tree */}
-      <group position={[0, 0, 0]}>
-        {/* Genesis node */}
-        <Float speed={1} rotationIntensity={0.2} floatIntensity={0.3}>
-          <mesh position={[0, 0, 0]}>
-            <sphereGeometry args={[0.8, 16, 16]} />
-            <meshStandardMaterial 
-              color="#ffd700"
-              emissive="#ffd700"
-              emissiveIntensity={0.5}
-            />
-          </mesh>
-        </Float>
-
-        {/* Family members */}
-        {Array.from({ length: 6 }).map((_, i) => {
-          const angle = (i / 6) * Math.PI * 2
-          const radius = 2.5
-          const height = Math.sin(i * 0.8) * 1.5
+      {/* Tree Seed (DNA-inspired) */}
+      <group position={[0, -2, 0]}>
+        <Sphere args={[0.8, 32, 32]}>
+          <meshStandardMaterial 
+            color="#8B4513"
+            emissive="#654321"
+            emissiveIntensity={0.2}
+          />
+        </Sphere>
+        
+        {/* DNA pattern on seed */}
+        {Array.from({ length: 8 }).map((_, i) => {
+          const angle = (i / 8) * Math.PI * 2
+          const radius = 0.6
+          
           return (
-            <Float key={i} speed={1.2} rotationIntensity={0.3} floatIntensity={0.4}>
-              <mesh
+            <group key={i}>
+              <Sphere
                 position={[
                   Math.cos(angle) * radius,
-                  height,
-                  Math.sin(angle) * radius
+                  Math.sin(angle) * radius,
+                  0.3
                 ]}
+                args={[0.08, 16, 16]}
               >
-                <sphereGeometry args={[0.4, 16, 16]} />
                 <meshStandardMaterial 
-                  color="#00ff88" 
-                  emissive="#00ff88"
+                  color={i % 2 === 0 ? "#00ff88" : "#4ecdc4"}
+                  emissive={i % 2 === 0 ? "#00ff88" : "#4ecdc4"}
                   emissiveIntensity={0.3}
                 />
-              </mesh>
-            </Float>
-          )
-        })}
-
-        {/* Connection lines */}
-        {Array.from({ length: 6 }).map((_, i) => {
-          const angle = (i / 6) * Math.PI * 2
-          const radius = 2.5
-          const height = Math.sin(i * 0.8) * 1.5
-          return (
-            <Cylinder
-              key={i}
-              position={[
-                Math.cos(angle) * radius * 0.5,
-                height * 0.5,
-                Math.sin(angle) * radius * 0.5
-              ]}
-              args={[0.02, 0.02, Math.sqrt(radius * radius + height * height)]}
-              rotation={[0, angle, Math.atan2(height, radius)]}
-            >
-              <meshStandardMaterial 
-                color="#ffffff"
-                emissive="#ffffff"
-                emissiveIntensity={0.2}
-              />
-            </Cylinder>
+              </Sphere>
+            </group>
           )
         })}
       </group>
 
-      {/* Multi-layered Security Shield */}
-      <group>
-        {/* Inner shield layer */}
-        {Array.from({ length: 24 }).map((_, i) => {
-          const angle = (i / 24) * Math.PI * 2
-          const radius = 3.5
-          const height = Math.sin((i / 24) * Math.PI) * 2
-          const opacity = shieldProgress > (i / 24) * 100 ? 0.7 : 0.1
-          
-          return (
-            <mesh
-              key={`inner-${i}`}
-              position={[
-                Math.cos(angle) * radius,
-                height,
-                Math.sin(angle) * radius
-              ]}
-              rotation={[0, angle, 0]}
-            >
-              <planeGeometry args={[0.4, 0.4]} />
-              <meshStandardMaterial
-                color="#FFD700"
-                emissive="#FFD700"
-                emissiveIntensity={0.6}
-                transparent
-                opacity={opacity}
-                side={THREE.DoubleSide}
-              />
-            </mesh>
-          )
-        })}
-
-        {/* Outer shield layer */}
-        {shieldProgress > 50 && Array.from({ length: 36 }).map((_, i) => {
-          const angle = (i / 36) * Math.PI * 2
-          const radius = 4.5
-          const height = Math.sin((i / 36) * Math.PI) * 2.5
-          const opacity = shieldProgress > 50 + (i / 36) * 50 ? 0.5 : 0.1
-          
-          return (
-            <mesh
-              key={`outer-${i}`}
-              position={[
-                Math.cos(angle) * radius,
-                height,
-                Math.sin(angle) * radius
-              ]}
-              rotation={[0, angle, 0]}
-            >
-              <planeGeometry args={[0.3, 0.3]} />
-              <meshStandardMaterial
-                color="#4ecdc4"
-                emissive="#4ecdc4"
-                emissiveIntensity={0.4}
-                transparent
-                opacity={opacity}
-                side={THREE.DoubleSide}
-              />
-            </mesh>
-          )
-        })}
-      </group>
-
-      {/* World ID Orb with Enhanced Branding */}
-      {showWorldId && (
-        <group position={[0, 4, 0]}>
-          <Float speed={2} rotationIntensity={0.2} floatIntensity={0.5}>
-            <mesh scale={worldIdPulse}>
-              <sphereGeometry args={[0.8, 32, 32]} />
-              <meshStandardMaterial
-                color="#FFFFFF"
-                emissive="#FFFFFF"
-                emissiveIntensity={0.6}
-                transparent
-                opacity={0.9}
-              />
-            </mesh>
-          </Float>
-          
-          {/* World ID logo rings */}
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Float key={i} speed={1.5 + i * 0.3} rotationIntensity={0.4} floatIntensity={0.3}>
-              <mesh rotation={[i * Math.PI / 3, 0, 0]}>
-                <ringGeometry args={[1.2 + i * 0.2, 1.4 + i * 0.2, 32]} />
-                <meshStandardMaterial
-                  color="#FFFFFF"
-                  emissive="#FFFFFF"
-                  emissiveIntensity={0.3}
-                  transparent
-                  opacity={0.6 - i * 0.1}
-                />
-              </mesh>
-            </Float>
-          ))}
-        </group>
-      )}
-
-      {/* Enhanced Protection Pulses */}
-      <group>
-        {Array.from({ length: 4 }).map((_, i) => (
-          <mesh key={i} position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[2.5 + i * 0.8, 2.7 + i * 0.8, 64]} />
-            <meshStandardMaterial
-              color="#FFD700"
-              emissive="#FFD700"
-              emissiveIntensity={0.3}
-              transparent
-              opacity={0.4 - i * 0.08}
-            />
-          </mesh>
-        ))}
-      </group>
-
-      {/* Security Status Text */}
-      {shieldProgress > 40 && (
-        <Text
-          position={[0, -5, 0]}
-          fontSize={0.4}
-          color="#FFD700"
-          anchorX="center"
-          anchorY="middle"
+      {/* Growing Tree Trunk */}
+      <group position={[0, 0, 0]}>
+        <Cylinder
+          args={[0.3, 0.4, 4 * growthProgress]}
+          position={[0, 2 * growthProgress - 2, 0]}
         >
-          🛡️ Your legacy is being secured...
-        </Text>
-      )}
+          <meshStandardMaterial 
+            color="#8B4513"
+            emissive="#654321"
+            emissiveIntensity={0.1}
+          />
+        </Cylinder>
 
-      {/* World ID Branding */}
-      {showWorldId && (
-        <group position={[0, 6, 0]}>
-          <Text
-            fontSize={0.6}
-            color="#FFFFFF"
-            anchorX="center"
-            anchorY="middle"
-          >
-            World ID
-          </Text>
-          <Text
-            position={[0, -0.8, 0]}
-            fontSize={0.3}
-            color="#4ecdc4"
-            anchorX="center"
-            anchorY="middle"
-          >
-            Verify • Protect • Preserve
-          </Text>
-        </group>
-      )}
-
-      {/* Enhanced Interaction Button */}
-      {shieldProgress > 90 && (
-        <Html position={[0, -6, 0]} center>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center"
-          >
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-10 py-4 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 text-white rounded-full shadow-2xl hover:from-yellow-500 hover:via-orange-600 hover:to-red-600 transition-all duration-300 font-bold text-lg"
-              onClick={handleAcknowledgeSecurity}
+        {/* First branches */}
+        {growthProgress > 0.5 && (
+          <>
+            <Cylinder
+              args={[0.1, 0.15, 1.5]}
+              position={[-1.5, 1, 0]}
+              rotation={[0, 0, Math.PI / 4]}
             >
-              🛡️ Secure My Legacy with World ID
-            </motion.button>
-            <p className="text-xs text-gray-400 mt-2">
-              Zero-knowledge proof of humanity
-            </p>
-          </motion.div>
-        </Html>
-      )}
+              <meshStandardMaterial color="#228B22" />
+            </Cylinder>
+            <Cylinder
+              args={[0.1, 0.15, 1.5]}
+              position={[1.5, 1, 0]}
+              rotation={[0, 0, -Math.PI / 4]}
+            >
+              <meshStandardMaterial color="#228B22" />
+            </Cylinder>
+          </>
+        )}
+
+        {/* Leaves */}
+        {growthProgress > 0.7 && (
+          <>
+            <Sphere position={[-1.8, 1.5, 0]} args={[0.3, 16, 16]}>
+              <meshStandardMaterial color="#32CD32" />
+            </Sphere>
+            <Sphere position={[1.8, 1.5, 0]} args={[0.3, 16, 16]}>
+              <meshStandardMaterial color="#32CD32" />
+            </Sphere>
+          </>
+        )}
+      </group>
+
+      {/* Growth particles */}
+      <FloatingParticles count={25} color="#00ff88" radius={6} />
     </group>
   )
 }
 
-// Step 6: Platform Tour
-function PlatformTour({ onComplete, playFeedback }: { onComplete: () => void, playFeedback?: (type: string) => void }) {
-  const [tourStep, setTourStep] = useState(0)
-  const [isAnimating, setIsAnimating] = useState(false)
+// Step 4: Family Tree Growth - Tree grows with family connections
+function FamilyTreeGrowth({ onComplete, playFeedback, setWaitingForClick }: { 
+  onComplete: () => void, 
+  playFeedback?: (type: string) => void,
+  setWaitingForClick: (waiting: boolean) => void
+}) {
   const groupRef = useRef<THREE.Group>(null)
+  const [treeGrowth, setTreeGrowth] = useState(0)
 
-  const tourPoints = [
-    {
-      title: "3D Family Tree",
-      description: "Visualize your family connections in stunning 3D space with blockchain-verified relationships",
-      emoji: "🌳",
-      color: "#00ff88",
-      position: [0, 0, 0] as [number, number, number]
-    },
-    {
-      title: "DNA Visualization",
-      description: "Explore your genetic heritage through interactive DNA helix with real base pair sequences",
-      emoji: "🧬",
-      color: "#ff6b9d",
-      position: [6, 0, 0] as [number, number, number]
-    },
-    {
-      title: "Blockchain Storage",
-      description: "Your family data is stored forever on the blockchain, immutable and secure",
-      emoji: "⛓️",
-      color: "#4ecdc4",
-      position: [-6, 0, 0] as [number, number, number]
-    },
-    {
-      title: "Global Heritage Map",
-      description: "Discover your family's journey across the world with interactive geographic mapping",
-      emoji: "🗺️",
-      color: "#ffd700",
-      position: [0, 5, 0] as [number, number, number]
-    },
-    {
-      title: "AI-Powered Insights",
-      description: "Get personalized family insights and historical context powered by advanced AI",
-      emoji: "🤖",
-      color: "#ff9500",
-      position: [0, -5, 0] as [number, number, number]
-    }
-  ]
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setTreeGrowth(1)
+      setWaitingForClick(true)
+    }, 4000)
+    return () => clearTimeout(timer)
+  }, [setWaitingForClick])
 
   useFrame((state) => {
     if (groupRef.current) {
-      // Gentle rotation for the entire tour
-      groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.2) * 0.1
+      groupRef.current.rotation.y = state.clock.elapsedTime * 0.05
     }
   })
 
-  const nextTourStep = () => {
-    console.log(`Platform Tour: ${tourPoints[tourStep].title} demonstrated`)
-    playFeedback?.('step-complete')
-    setIsAnimating(true)
-    
-    setTimeout(() => {
-      if (tourStep < tourPoints.length - 1) {
-        setTourStep(tourStep + 1)
-      } else {
-        console.log('Platform Tour: All features demonstrated, proceeding to family creation')
-        onComplete()
-      }
-      setIsAnimating(false)
-    }, 500)
-  }
-
-  const currentFeature = tourPoints[tourStep]
-
   return (
     <group ref={groupRef}>
-      {/* Feature Demonstrations */}
-      {tourPoints.map((feature, index) => {
-        const isActive = index === tourStep
-        const isVisible = index <= tourStep
-        const scale = isActive ? 1.2 : isVisible ? 0.8 : 0.3
-        const opacity = isActive ? 1 : isVisible ? 0.7 : 0.3
+      {/* Main Tree Trunk */}
+      <Cylinder
+        args={[0.4, 0.5, 6]}
+        position={[0, 0, 0]}
+      >
+        <meshStandardMaterial 
+          color="#8B4513"
+          emissive="#654321"
+          emissiveIntensity={0.1}
+        />
+      </Cylinder>
 
+      {/* Primary Branches */}
+      {Array.from({ length: 4 }).map((_, i) => {
+        const angle = (i / 4) * Math.PI * 2
+        const radius = 2
+        const height = 2 + Math.sin(i) * 1
+        
         return (
-          <group key={index} position={feature.position}>
-            {/* Feature Visualization */}
-            {feature.title === "3D Family Tree" && (
-              <group>
-                {/* Genesis node */}
-                <Float speed={isActive ? 2 : 1} rotationIntensity={0.3} floatIntensity={0.4}>
-                  <Sphere args={[0.8, 16, 16]} scale={scale}>
-                    <meshStandardMaterial 
-                      color={feature.color}
-                      emissive={feature.color}
-                      emissiveIntensity={isActive ? 0.5 : 0.2}
-                      transparent
-                      opacity={opacity}
-                    />
-                  </Sphere>
-                </Float>
-                
-                {/* Family members */}
-                {Array.from({ length: 4 }).map((_, i) => {
-                  const angle = (i / 4) * Math.PI * 2
-                  const radius = 2
-                  return (
-                    <Float key={i} speed={1.5} rotationIntensity={0.2} floatIntensity={0.3}>
-                      <Sphere 
-                        position={[Math.cos(angle) * radius, 0, Math.sin(angle) * radius]}
-                        args={[0.4, 16, 16]} 
-                        scale={scale}
-                      >
-                        <meshStandardMaterial 
-                          color={feature.color}
-                          emissive={feature.color}
-                          emissiveIntensity={isActive ? 0.3 : 0.1}
-                          transparent
-                          opacity={opacity}
-                        />
-                      </Sphere>
-                    </Float>
-                  )
-                })}
-              </group>
+          <group key={i}>
+            <Cylinder
+              args={[0.15, 0.2, 2.5]}
+              position={[
+                Math.cos(angle) * radius,
+                height,
+                Math.sin(angle) * radius
+              ]}
+              rotation={[
+                Math.PI / 6,
+                0,
+                angle + Math.PI / 2
+              ]}
+            >
+              <meshStandardMaterial color="#228B22" />
+            </Cylinder>
+
+            {/* Secondary branches */}
+            {treeGrowth > 0.5 && (
+              <>
+                <Cylinder
+                  args={[0.08, 0.12, 1.5]}
+                  position={[
+                    Math.cos(angle) * (radius + 1.2),
+                    height + 1,
+                    Math.sin(angle) * (radius + 1.2)
+                  ]}
+                  rotation={[
+                    Math.PI / 4,
+                    0,
+                    angle + Math.PI
+                  ]}
+                >
+                  <meshStandardMaterial color="#32CD32" />
+                </Cylinder>
+                <Cylinder
+                  args={[0.08, 0.12, 1.5]}
+                  position={[
+                    Math.cos(angle) * (radius + 1.2),
+                    height + 1,
+                    Math.sin(angle) * (radius + 1.2)
+                  ]}
+                  rotation={[
+                    -Math.PI / 4,
+                    0,
+                    angle
+                  ]}
+                >
+                  <meshStandardMaterial color="#32CD32" />
+                </Cylinder>
+              </>
             )}
 
-            {feature.title === "DNA Visualization" && (
-              <group>
-                {Array.from({ length: 16 }).map((_, i) => {
-                  const y = (i - 8) * 0.3
-                  const angle = (i / 16) * Math.PI * 4
-                  const radius = 1.5
-                  return (
-                    <Float key={i} speed={isActive ? 2 : 1} rotationIntensity={0.1} floatIntensity={0.2}>
-                      <Sphere
-                        position={[Math.cos(angle) * radius, y, Math.sin(angle) * radius]}
-                        args={[0.12, 8, 8]}
-                        scale={scale}
-                      >
-                        <meshStandardMaterial 
-                          color={feature.color}
-                          emissive={feature.color}
-                          emissiveIntensity={isActive ? 0.4 : 0.1}
-                          transparent
-                          opacity={opacity}
-                        />
-                      </Sphere>
-                    </Float>
-                  )
-                })}
-              </group>
-            )}
-
-            {feature.title === "Blockchain Storage" && (
-              <group>
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Float key={i} speed={isActive ? 1.5 : 1} rotationIntensity={0.2} floatIntensity={0.3}>
-                    <mesh position={[0, i * 0.8 - 2, 0]} scale={scale}>
-                      <boxGeometry args={[1, 0.6, 0.6]} />
-                      <meshStandardMaterial 
-                        color={feature.color}
-                        emissive={feature.color}
-                        emissiveIntensity={isActive ? 0.4 : 0.1}
-                        transparent
-                        opacity={opacity}
-                      />
-                    </mesh>
-                  </Float>
-                ))}
-              </group>
-            )}
-
-            {feature.title === "Global Heritage Map" && (
-              <group>
-                {/* Globe representation */}
-                <Float speed={isActive ? 1.5 : 1} rotationIntensity={0.3} floatIntensity={0.4}>
-                  <Sphere args={[1.2, 16, 16]} scale={scale}>
-                    <meshStandardMaterial 
-                      color={feature.color}
-                      emissive={feature.color}
-                      emissiveIntensity={isActive ? 0.3 : 0.1}
-                      transparent
-                      opacity={opacity}
-                      wireframe
-                    />
-                  </Sphere>
-                </Float>
-                
-                {/* Location markers */}
-                {Array.from({ length: 8 }).map((_, i) => {
-                  const angle = (i / 8) * Math.PI * 2
-                  const radius = 1.5
-                  return (
-                    <Float key={i} speed={2} rotationIntensity={0.1} floatIntensity={0.2}>
-                      <Sphere 
-                        position={[Math.cos(angle) * radius, Math.sin(i) * 0.5, Math.sin(angle) * radius]}
-                        args={[0.1, 8, 8]} 
-                        scale={scale}
-                      >
-                        <meshStandardMaterial 
-                          color="#ffffff"
-                          emissive="#ffffff"
-                          emissiveIntensity={isActive ? 0.6 : 0.2}
-                          transparent
-                          opacity={opacity}
-                        />
-                      </Sphere>
-                    </Float>
-                  )
-                })}
-              </group>
-            )}
-
-            {feature.title === "AI-Powered Insights" && (
-              <group>
-                {/* AI brain representation */}
-                <Float speed={isActive ? 2 : 1} rotationIntensity={0.4} floatIntensity={0.5}>
-                  <Sphere args={[0.8, 16, 16]} scale={scale}>
-                    <meshStandardMaterial 
-                      color={feature.color}
-                      emissive={feature.color}
-                      emissiveIntensity={isActive ? 0.5 : 0.2}
-                      transparent
-                      opacity={opacity}
-                    />
-                  </Sphere>
-                </Float>
-                
-                {/* Neural network connections */}
-                {Array.from({ length: 12 }).map((_, i) => {
-                  const angle = (i / 12) * Math.PI * 2
-                  const radius = 1.8
-                  return (
-                    <Float key={i} speed={1.5} rotationIntensity={0.1} floatIntensity={0.2}>
-                      <Sphere 
-                        position={[Math.cos(angle) * radius, Math.sin(i * 0.5) * 0.3, Math.sin(angle) * radius]}
-                        args={[0.08, 8, 8]} 
-                        scale={scale}
-                      >
-                        <meshStandardMaterial 
-                          color={feature.color}
-                          emissive={feature.color}
-                          emissiveIntensity={isActive ? 0.4 : 0.1}
-                          transparent
-                          opacity={opacity}
-                        />
-                      </Sphere>
-                    </Float>
-                  )
-                })}
-              </group>
-            )}
-
-            {/* Feature highlight effect */}
-            {isActive && (
-              <mesh position={[0, 0, 0]}>
-                <ringGeometry args={[2, 2.5, 32]} />
+            {/* Family member nodes */}
+            {treeGrowth > 0.7 && (
+              <Sphere
+                position={[
+                  Math.cos(angle) * (radius + 2),
+                  height,
+                  Math.sin(angle) * (radius + 2)
+                ]}
+                args={[0.2, 16, 16]}
+              >
                 <meshStandardMaterial 
-                  color={feature.color}
-                  emissive={feature.color}
+                  color="#00ff88"
+                  emissive="#00ff88"
                   emissiveIntensity={0.3}
-                  transparent
-                  opacity={0.6}
                 />
-              </mesh>
+              </Sphere>
             )}
           </group>
         )
       })}
 
-      {/* Enhanced Tour UI */}
-      <Html position={[0, -7, 0]} center>
-        <motion.div
-          key={tourStep}
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
-          transition={{ duration: 0.5 }}
-          className="text-center max-w-md"
-        >
-          <div className="bg-black bg-opacity-90 p-6 rounded-lg border border-cyan-400">
-            <div className="text-4xl mb-3">{currentFeature.emoji}</div>
-            <h3 className="text-2xl font-bold text-white mb-3">{currentFeature.title}</h3>
-            <p className="text-sm text-gray-300 mb-4 leading-relaxed">{currentFeature.description}</p>
-            
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-gray-500">
-                {tourStep + 1} of {tourPoints.length}
-              </span>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={nextTourStep}
-                disabled={isAnimating}
-                className="px-6 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg hover:from-green-600 hover:to-blue-600 transition-all duration-300 font-semibold disabled:opacity-50"
-              >
-                {tourStep < tourPoints.length - 1 ? 'Next Feature →' : 'Start Building 🚀'}
-              </motion.button>
-            </div>
-          </div>
-        </motion.div>
-      </Html>
-    </group>
-  )
-}
-
-// Step 7: Family Creation
-function FamilyCreation({ onComplete, playFeedback }: { onComplete: () => void, playFeedback?: (type: string) => void }) {
-  const [newNodePosition, setNewNodePosition] = useState<[number, number, number] | null>(null)
-  const [isGrowing, setIsGrowing] = useState(false)
-
-  const createFirstMember = () => {
-    console.log('Family Creation: Genesis node created')
-    playFeedback?.('genesis-create')
-    setNewNodePosition([0, 0, 0])
-    setIsGrowing(true)
-    setTimeout(() => {
-      onComplete()
-    }, 3000)
-  }
-
-  return (
-    <group>
-      {/* Genesis node */}
-      {newNodePosition && (
-        <Float speed={2} rotationIntensity={0.5} floatIntensity={0.8}>
-          <Sphere
-            position={newNodePosition}
-            args={[1.5, 16, 16]}
-            scale={isGrowing ? [1, 1, 1] : [0, 0, 0]}
-          >
+      {/* Tree canopy */}
+      {treeGrowth > 0.3 && (
+        <group position={[0, 4, 0]}>
+          <Sphere args={[3, 32, 32]}>
             <meshStandardMaterial 
-              color="#FFD700" 
-              emissive="#FFA500"
-              emissiveIntensity={0.5}
+              color="#228B22"
+              transparent
+              opacity={0.8}
             />
           </Sphere>
-        </Float>
+        </group>
       )}
 
-      {/* Growing branches */}
-      {isGrowing && (
-        <>
+      {/* Connection lines between family members */}
+      {treeGrowth > 0.8 && (
+        <group>
           {Array.from({ length: 4 }).map((_, i) => {
-            const angle = (i / 4) * Math.PI * 2
-            const delay = i * 0.5
-
+            const angle1 = (i / 4) * Math.PI * 2
+            const angle2 = ((i + 1) / 4) * Math.PI * 2
+            const radius = 2
+            
             return (
-              <group key={i}>
-                <Sphere
-                  position={[
-                    Math.cos(angle) * 3,
-                    Math.sin(i) * 2,
-                    Math.sin(angle) * 3
-                  ]}
-                  args={[0.8, 16, 16]}
-                  scale={isGrowing ? [1, 1, 1] : [0, 0, 0]}
-                >
-                  <meshStandardMaterial 
-                    color="#00ff88" 
-                    emissive="#00aa55"
-                    emissiveIntensity={0.3}
-                  />
-                </Sphere>
-              </group>
+              <Line
+                key={i}
+                points={[
+                  [
+                    Math.cos(angle1) * (radius + 2),
+                    2 + Math.sin(i) * 1 + 1.5,
+                    Math.sin(angle1) * (radius + 2)
+                  ],
+                  [
+                    Math.cos(angle2) * (radius + 2),
+                    2 + Math.sin(i + 1) * 1 + 1.5,
+                    Math.sin(angle2) * (radius + 2)
+                  ]
+                ]}
+                color="#00ff88"
+                lineWidth={2}
+              />
             )
           })}
-        </>
+        </group>
       )}
 
-      {/* Creation button */}
-      {!newNodePosition && (
-        <Html position={[0, -5, 0]} center>
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-white mb-4">
-              Create Your Genesis Block
-            </h2>
-            <button
-              onClick={createFirstMember}
-              className="px-8 py-4 bg-gradient-to-r from-green-400 to-blue-500 text-white rounded-full text-lg font-semibold hover:from-green-500 hover:to-blue-600 transition-all duration-300"
-            >
-              🌱 Plant Your Family Tree
-            </button>
-          </div>
-        </Html>
-      )}
+      {/* Growth particles */}
+      <FloatingParticles count={35} color="#00ff88" radius={8} />
     </group>
   )
 }
 
-// UI Overlay Component
+// Step 5: Security Verification - World ID shield formation
+function SecurityVerification({ onComplete, playFeedback, setWaitingForClick }: { 
+  onComplete: () => void, 
+  playFeedback?: (type: string) => void,
+  setWaitingForClick: (waiting: boolean) => void
+}) {
+  const groupRef = useRef<THREE.Group>(null)
+  const [shieldFormation, setShieldFormation] = useState(0)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShieldFormation(1)
+      setWaitingForClick(true)
+    }, 3000)
+    return () => clearTimeout(timer)
+  }, [setWaitingForClick])
+
+  useFrame((state) => {
+    if (groupRef.current) {
+      groupRef.current.rotation.y = state.clock.elapsedTime * 0.1
+    }
+  })
+
+  return (
+    <group ref={groupRef}>
+      {/* Central World ID Symbol */}
+      <group position={[0, 0, 0]}>
+        <Sphere args={[1.5, 32, 32]}>
+          <meshStandardMaterial 
+            color="#00ff88"
+            emissive="#00ff88"
+            emissiveIntensity={0.3}
+            transparent
+            opacity={0.8}
+          />
+        </Sphere>
+        
+        {/* World ID Globe */}
+        <Sphere args={[1, 32, 32]}>
+          <meshStandardMaterial 
+            color="#4ecdc4"
+            emissive="#4ecdc4"
+            emissiveIntensity={0.2}
+          />
+        </Sphere>
+      </group>
+
+      {/* Protective Shield */}
+      {shieldFormation > 0.3 && (
+        <group position={[0, 0, 0]}>
+          <Sphere args={[3, 32, 32]}>
+            <meshStandardMaterial 
+              color="#00ff88"
+              emissive="#00ff88"
+              emissiveIntensity={0.1}
+              transparent
+              opacity={0.3}
+              wireframe
+            />
+          </Sphere>
+        </group>
+      )}
+
+      {/* Security particles */}
+      <FloatingParticles count={20} color="#00ff88" radius={5} />
+    </group>
+  )
+}
+
+// Step 6: Ready to Begin - Final preparation
+function ReadyToBegin({ onComplete, playFeedback, setWaitingForClick }: { 
+  onComplete: () => void, 
+  playFeedback?: (type: string) => void,
+  setWaitingForClick: (waiting: boolean) => void
+}) {
+  const groupRef = useRef<THREE.Group>(null)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setWaitingForClick(true)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [setWaitingForClick])
+
+  useFrame((state) => {
+    if (groupRef.current) {
+      groupRef.current.rotation.y = state.clock.elapsedTime * 0.2
+    }
+  })
+
+  return (
+    <group ref={groupRef}>
+      {/* Complete Family Tree */}
+      <group position={[0, 0, 0]}>
+        {/* Tree trunk */}
+        <Cylinder args={[0.5, 0.6, 8]} position={[0, 0, 0]}>
+          <meshStandardMaterial color="#8B4513" />
+        </Cylinder>
+
+        {/* Tree canopy */}
+        <Sphere args={[4, 32, 32]} position={[0, 6, 0]}>
+          <meshStandardMaterial 
+            color="#228B22"
+            transparent
+            opacity={0.9}
+          />
+        </Sphere>
+
+        {/* Family member nodes */}
+        {Array.from({ length: 6 }).map((_, i) => {
+          const angle = (i / 6) * Math.PI * 2
+          const radius = 3
+          const height = 4 + Math.sin(i) * 2
+          
+          return (
+            <Sphere
+              key={i}
+              position={[
+                Math.cos(angle) * radius,
+                height,
+                Math.sin(angle) * radius
+              ]}
+              args={[0.3, 16, 16]}
+            >
+              <meshStandardMaterial 
+                color="#00ff88"
+                emissive="#00ff88"
+                emissiveIntensity={0.4}
+              />
+            </Sphere>
+          )
+        })}
+      </group>
+
+      {/* Celebration particles */}
+      <FloatingParticles count={50} color="#00ff88" radius={10} />
+    </group>
+  )
+}
+
+// Enhanced UI Overlay
 function OnboardingUI({ 
   currentStep, 
   totalSteps, 
   text, 
-  isInteractive, 
-  onNext, 
+  subtitle,
+  isWaitingForClick, 
   onSkip 
 }: {
   currentStep: number
   totalSteps: number
   text: string
-  isInteractive?: boolean
-  onNext: () => void
+  subtitle: string
+  isWaitingForClick: boolean
   onSkip: () => void
 }) {
   return (
     <>
       {/* Progress Bar */}
-      <div className="absolute top-4 left-4 right-4 z-20">
+      <div className="absolute top-6 left-6 right-6 z-20">
         <div className="flex justify-between items-center mb-4">
-          <div className="text-white text-sm">
-            {currentStep + 1} / {totalSteps}
+          <div className="text-white text-sm font-medium">
+            Step {currentStep + 1} of {totalSteps}
           </div>
           <button
             onClick={onSkip}
-            className="text-gray-400 hover:text-white text-sm"
+            className="text-gray-400 hover:text-white text-sm transition-colors"
           >
             Skip Tour
           </button>
         </div>
         
-        <div className="w-full bg-gray-800 rounded-full h-1">
+        <div className="w-full bg-gray-800 rounded-full h-2">
           <motion.div
-            className="bg-gradient-to-r from-green-400 to-blue-500 h-1 rounded-full"
+            className="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
             transition={{ duration: 0.5 }}
@@ -1532,8 +790,8 @@ function OnboardingUI({
         </div>
       </div>
 
-      {/* Main Text */}
-      <div className="absolute bottom-20 left-4 right-4 z-20">
+      {/* Main Content */}
+      <div className="absolute bottom-20 left-6 right-6 z-20">
         <motion.div
           key={currentStep}
           initial={{ opacity: 0, y: 20 }}
@@ -1542,34 +800,32 @@ function OnboardingUI({
           transition={{ duration: 0.5 }}
           className="text-center"
         >
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
             {text}
           </h2>
           
-          {isInteractive && (
-            <p className="text-gray-300 text-sm">
-              Interact with the scene above to continue
-            </p>
+          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+            {subtitle}
+          </p>
+          
+          {isWaitingForClick && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white/10 backdrop-blur-sm rounded-full px-6 py-3 inline-block"
+            >
+              <p className="text-white text-lg font-medium">
+                Click anywhere to continue →
+              </p>
+            </motion.div>
           )}
         </motion.div>
       </div>
-
-      {/* Manual progression for interactive steps */}
-      {isInteractive && (
-        <div className="absolute bottom-6 right-6 z-20">
-          <button
-            onClick={onNext}
-            className="px-6 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors"
-          >
-            Continue →
-          </button>
-        </div>
-      )}
     </>
   )
 }
 
-// Utility Components
+// Enhanced Floating Particles
 function FloatingParticles({ 
   count = 50, 
   color = "#ffffff", 

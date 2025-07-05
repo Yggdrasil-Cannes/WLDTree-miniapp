@@ -103,6 +103,28 @@ export default function DebugPage() {
         {/* Actions */}
         <div className="mt-8 space-y-4">
           <button
+            onClick={() => {
+              localStorage.clear();
+              window.location.reload();
+            }}
+            className="bg-orange-500 text-white px-6 py-2 rounded hover:bg-orange-600 mr-4"
+          >
+            Clear All localStorage & Reload
+          </button>
+          
+          <button
+            onClick={() => {
+              localStorage.removeItem('worldtree_quiz_completed');
+              localStorage.removeItem('worldtree_onboarding_completed');
+              localStorage.removeItem('worldtree_onboarding_skipped');
+              window.location.reload();
+            }}
+            className="bg-yellow-500 text-black px-6 py-2 rounded hover:bg-yellow-600 mr-4"
+          >
+            Reset Flow (Keep User Data)
+          </button>
+          
+          <button
             onClick={resetOnboarding}
             className="bg-red-500 text-white px-6 py-2 rounded hover:bg-red-600"
             disabled={!userFromLocalStorage?.userId}

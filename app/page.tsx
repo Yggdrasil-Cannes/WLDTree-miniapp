@@ -52,6 +52,19 @@ export default function Home() {
       return;
     }
 
+    // If user has localStorage data but is not properly authenticated, clear it and start fresh
+    const hasLocalStorageData = localStorage.getItem('worldcoin_user_id') || localStorage.getItem('worldIdUser');
+    if (hasLocalStorageData && unifiedSession.status === 'unauthenticated') {
+      console.log('Main App: Found localStorage data but user not authenticated, clearing and starting fresh');
+      localStorage.removeItem('worldcoin_user_id');
+      localStorage.removeItem('worldcoin_username');
+      localStorage.removeItem('worldcoin_wallet_address');
+      localStorage.removeItem('worldIdUser');
+      localStorage.removeItem('worldtree_quiz_completed');
+      localStorage.removeItem('worldtree_onboarding_completed');
+      localStorage.removeItem('worldtree_onboarding_skipped');
+    }
+
     // If onboarding was completed or skipped, show verification
     if (onboardingCompleted || onboardingSkipped) {
       console.log('Main App: Onboarding completed, showing verification');
@@ -81,6 +94,17 @@ export default function Home() {
         <div className="text-white text-center">
           <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p>Loading WorldTree...</p>
+          {process.env.NODE_ENV === 'development' && (
+            <button
+              onClick={() => {
+                localStorage.clear();
+                window.location.reload();
+              }}
+              className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+            >
+              Clear localStorage (Dev)
+            </button>
+          )}
         </div>
       </main>
     );

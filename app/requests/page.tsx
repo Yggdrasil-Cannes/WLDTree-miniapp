@@ -64,17 +64,17 @@ export default function RequestsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 pb-20">
+    <div className="min-h-screen bg-black pb-20">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-10">
+      <div className="bg-black/80 backdrop-blur-md border-b border-gray-800 sticky top-0 z-10">
         <div className="max-w-screen-sm mx-auto px-4 py-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center">
               <Users className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Family Requests</h1>
-              <p className="text-sm text-gray-600">Connect with your relatives</p>
+              <h1 className="text-xl font-bold text-white">Family Requests</h1>
+              <p className="text-sm text-gray-400">Connect with your relatives</p>
             </div>
           </div>
         </div>
@@ -82,13 +82,13 @@ export default function RequestsPage() {
 
       <div className="max-w-screen-sm mx-auto px-4 py-6">
         {/* Tab Navigation */}
-        <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
+        <div className="flex bg-gray-800 rounded-lg p-1 mb-6">
           <button
             onClick={() => setActiveTab('incoming')}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
               activeTab === 'incoming'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-800'
+                ? 'bg-green-500 text-black shadow-sm'
+                : 'text-gray-400 hover:text-white'
             }`}
           >
             Incoming ({requests.filter(r => r.type === 'incoming').length})
@@ -97,8 +97,8 @@ export default function RequestsPage() {
             onClick={() => setActiveTab('outgoing')}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
               activeTab === 'outgoing'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-800'
+                ? 'bg-green-500 text-black shadow-sm'
+                : 'text-gray-400 hover:text-white'
             }`}
           >
             Outgoing ({requests.filter(r => r.type === 'outgoing').length})
@@ -113,13 +113,13 @@ export default function RequestsPage() {
               animate={{ opacity: 1, y: 0 }}
               className="text-center py-12"
             >
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
                 <UserPlus className="w-8 h-8 text-gray-400" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-white mb-2">
                 No {activeTab} requests
               </h3>
-              <p className="text-gray-500">
+              <p className="text-gray-400">
                 {activeTab === 'incoming' 
                   ? 'You haven\'t received any connection requests yet.'
                   : 'You haven\'t sent any connection requests yet.'
@@ -134,7 +134,7 @@ export default function RequestsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <Card className="p-4 bg-white/80 backdrop-blur-sm border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                <Card className="p-4 bg-gray-900/80 backdrop-blur-sm border-gray-700 shadow-sm hover:shadow-md transition-shadow">
                   <div className="flex items-start gap-3">
                     {/* Avatar */}
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-semibold">
@@ -144,15 +144,15 @@ export default function RequestsPage() {
                     {/* Content */}
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-gray-900">{request.name}</h3>
-                        <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
+                        <h3 className="font-semibold text-white">{request.name}</h3>
+                        <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">
                           {request.relationship}
                         </span>
                       </div>
                       
-                      <p className="text-sm text-gray-600 mb-2">{request.message}</p>
+                      <p className="text-sm text-gray-300 mb-2">{request.message}</p>
                       
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <div className="flex items-center gap-2 text-xs text-gray-400">
                         <Clock className="w-3 h-3" />
                         {request.timestamp.toLocaleDateString()}
                       </div>
@@ -165,7 +165,7 @@ export default function RequestsPage() {
                           <Button
                             size="sm"
                             onClick={() => handleAcceptRequest(request.id)}
-                            className="bg-green-500 hover:bg-green-600 text-white h-8 px-3"
+                            className="bg-green-500 hover:bg-green-600 text-black h-8 px-3"
                           >
                             <CheckCircle className="w-3 h-3 mr-1" />
                             Accept
@@ -174,7 +174,7 @@ export default function RequestsPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => handleDeclineRequest(request.id)}
-                            className="border-red-200 text-red-600 hover:bg-red-50 h-8 px-3"
+                            className="border-red-500 text-red-400 hover:bg-red-900/20 h-8 px-3"
                           >
                             <XCircle className="w-3 h-3 mr-1" />
                             Decline
@@ -183,7 +183,7 @@ export default function RequestsPage() {
                       )}
                       
                       {request.status === 'pending' && activeTab === 'outgoing' && (
-                        <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full">
+                        <span className="text-xs px-2 py-1 bg-yellow-900/50 text-yellow-400 rounded-full">
                           Pending
                         </span>
                       )}
@@ -197,7 +197,7 @@ export default function RequestsPage() {
 
         {/* Send Request Button */}
         <div className="mt-8">
-          <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg">
+          <Button className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-black shadow-lg">
             <UserPlus className="w-4 h-4 mr-2" />
             Send Connection Request
           </Button>
