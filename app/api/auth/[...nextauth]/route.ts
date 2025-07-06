@@ -1,7 +1,7 @@
 import NextAuth, { NextAuthOptions } from "next-auth";
 import { prisma } from '@/lib/prisma';
 
-const authOptions: NextAuthOptions = {
+export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   
   // Optimize session strategy
