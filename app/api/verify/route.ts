@@ -94,17 +94,39 @@ export async function POST(req: Request) {
       );
     }
 
+    // Validate World ID payload structure
+    if (!payload.nullifier_hash) {
+      console.error("Missing nullifier_hash in payload");
+      return NextResponse.json(
+        { 
+          error: "Invalid World ID payload",
+          details: "Missing nullifier_hash",
+          code: 'INVALID_PAYLOAD'
+        },
+        { status: 400 }
+      );
+    }
+
     console.log("Starting verification with:", {
       payloadType: typeof payload,
       payloadKeys: payload ? Object.keys(payload) : null,
       action,
-      appId: process.env.APP_ID
+      appId: process.env.APP_ID,
+      hasNullifierHash: !!payload.nullifier_hash
     });
 
     try {
       console.log("Calling verifyCloudProof...");
+      
+      // Prepare the verification payload with required fields
+      const verificationPayload = {
+        ...payload,
+        // Ensure verification_level is present (default to 'orb' if missing)
+        verification_level: payload.verification_level || 'orb'
+      };
+
       const verifyResult = await verifyCloudProof(
-        payload,
+        verificationPayload,
         process.env.APP_ID as `app_${string}`,
         action
       );
@@ -124,6 +146,19 @@ export async function POST(req: Request) {
               code: verifyResult.code
             },
             { status: 409 } // Using 409 Conflict for already-verified case
+          );
+        }
+
+        // Handle validation errors
+        if (verifyResult.code === 'validation_error') {
+          return NextResponse.json(
+            { 
+              success: false, 
+              error: "Invalid verification data",
+              details: verifyResult.detail || verifyResult,
+              code: verifyResult.code
+            },
+            { status: 400 }
           );
         }
 
