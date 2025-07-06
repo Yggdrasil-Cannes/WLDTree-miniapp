@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TreePine, Plus, Edit, MapPin, Calendar, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import TabNavigation from '../../components/navigation/TabNavigation';
 import DataImportModal from '../../components/ui/modals/DataImportModal';
 import AddMemberModal from '../../components/ui/modals/AddMemberModal';
-import { WorldTreeProvider, useWorldTree } from '../../contexts/WorldTreeContext';
+import { useWorldTree } from '../../contexts/WorldTreeContext';
 import { TabBar } from "@/components/navigation/TabBar";
 
 interface FamilyMember {
@@ -26,14 +26,18 @@ interface FamilyMember {
   spouseId?: string;
 }
 
-function TreePageContent() {
+export default function TreePage() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   
   const { state, actions } = useWorldTree();
 
+  console.log('🌳 TreePage: Loading tree page with', state.familyData.length, 'members');
+  console.log('🌳 TreePage: Family data:', state.familyData);
+
   return (
     <div className="relative h-screen">
+      {/* Single TabNavigation component handles all rendering */}
       <TabNavigation />
 
       {/* Modals */}
@@ -53,15 +57,5 @@ function TreePageContent() {
         )}
       </AnimatePresence>
     </div>
-  );
-}
-
-export default function TreePage() {
-  console.log('🌳 TreePage: Loading tree page');
-  
-  return (
-    <WorldTreeProvider>
-      <TreePageContent />
-    </WorldTreeProvider>
   );
 } 

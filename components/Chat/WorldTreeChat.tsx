@@ -13,38 +13,82 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { motion } from 'framer-motion'
 import * as THREE from 'three'
 
+interface ChatMessage {
+  id: string
+  text: string
+  sender: 'user' | 'bot' | 'system'
+  timestamp: Date
+  isError?: boolean
+}
+
 export default function WorldTreeChat() {
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
-      text: "Welcome to WorldTree Chat! This feature is coming soon...",
+      text: "Welcome to WorldTree Chat! I'm your AI genealogy assistant. Ask me anything about family history research, DNA analysis, or building your family tree.",
       sender: 'system',
       timestamp: new Date()
     }
   ])
   const [inputMessage, setInputMessage] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleSendMessage = () => {
-    if (inputMessage.trim()) {
-      const newMessage = {
+  const handleSendMessage = async () => {
+    if (inputMessage.trim() && !isLoading) {
+      const userMessage: ChatMessage = {
         id: Date.now().toString(),
         text: inputMessage,
         sender: 'user',
         timestamp: new Date()
       }
-      setMessages([...messages, newMessage])
-      setInputMessage('')
       
-      // Simulate bot response
-      setTimeout(() => {
-        const botResponse = {
-          id: (Date.now() + 1).toString(),
-          text: "Thank you for your message! Our AI chat assistant is under development and will be available soon.",
-          sender: 'bot',
-          timestamp: new Date()
+      setMessages(prev => [...prev, userMessage])
+      setInputMessage('')
+      setIsLoading(true)
+      
+      try {
+        const response = await fetch('/api/guide/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message: inputMessage }),
+        })
+
+        const data = await response.json()
+
+        if (response.ok) {
+          const botResponse: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            text: data.response,
+            sender: 'bot',
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, botResponse])
+        } else {
+          // Handle API errors
+          const errorResponse: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            text: data.error || 'Sorry, I encountered an error. Please try again.',
+            sender: 'bot',
+            timestamp: new Date(),
+            isError: true
+          }
+          setMessages(prev => [...prev, errorResponse])
         }
-        setMessages(prev => [...prev, botResponse])
-      }, 1000)
+      } catch (error) {
+        console.error('Chat API error:', error)
+        const errorResponse: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          text: 'Sorry, I\'m having trouble connecting. Please check your internet connection and try again.',
+          sender: 'bot',
+          timestamp: new Date(),
+          isError: true
+        }
+        setMessages(prev => [...prev, errorResponse])
+      } finally {
+        setIsLoading(false)
+      }
     }
   }
 
@@ -85,7 +129,7 @@ export default function WorldTreeChat() {
             className="text-center"
           >
             <h1 className="text-2xl font-bold text-white mb-2">🌳 WorldTree Chat</h1>
-            <p className="text-gray-400 text-sm">AI-powered genealogy assistant (Coming Soon)</p>
+            <p className="text-gray-400 text-sm">AI-powered genealogy assistant</p>
           </motion.div>
         </div>
 
@@ -107,17 +151,37 @@ export default function WorldTreeChat() {
                       ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white'
                       : message.sender === 'system'
                         ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                        : 'bg-gray-700 text-white'
+                        : message.isError
+                          ? 'bg-red-600 text-white'
+                          : 'bg-gray-700 text-white'
                     }
                   `}
                 >
-                  <p className="text-sm">{message.text}</p>
+                  <p className="text-sm whitespace-pre-wrap">{message.text}</p>
                   <p className="text-xs opacity-70 mt-1">
                     {message.timestamp.toLocaleTimeString()}
                   </p>
                 </div>
               </motion.div>
             ))}
+            
+            {/* Loading indicator */}
+            {isLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-start"
+              >
+                <div className="bg-gray-700 text-white px-4 py-3 rounded-2xl">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <span className="text-sm ml-2">AI is thinking...</span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </div>
         </div>
 
@@ -130,42 +194,43 @@ export default function WorldTreeChat() {
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Type your genealogy question here..."
-                className="flex-1 px-4 py-3 bg-gray-800 border border-gray-600 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="Ask about genealogy research, DNA analysis, or family history..."
+                disabled={isLoading}
+                className="flex-1 px-4 py-3 bg-gray-800 border border-gray-600 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:opacity-50"
               />
               <button
                 onClick={handleSendMessage}
-                disabled={!inputMessage.trim()}
+                disabled={!inputMessage.trim() || isLoading}
                 className={`
                   px-6 py-3 rounded-2xl font-medium transition-all duration-300
-                  ${inputMessage.trim()
+                  ${inputMessage.trim() && !isLoading
                     ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white hover:from-green-600 hover:to-blue-600'
                     : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                   }
                 `}
               >
-                Send
+                {isLoading ? 'Sending...' : 'Send'}
               </button>
             </div>
             
-            {/* Feature preview */}
-            <div className="mt-4 text-center">
-              <p className="text-gray-500 text-sm">
-                🚧 Chat assistant is under development. Soon you&apos;ll be able to:
-              </p>
-              <div className="flex flex-wrap justify-center gap-2 mt-2">
+            {/* Quick suggestions */}
+            <div className="mt-4">
+              <p className="text-gray-500 text-sm mb-2">Try asking:</p>
+              <div className="flex flex-wrap gap-2">
                 {[
-                  "Ask genealogy questions",
-                  "Get research tips", 
-                  "Find DNA matches",
-                  "Explore family history"
-                ].map((feature) => (
-                  <span
-                    key={feature}
-                    className="px-3 py-1 bg-gray-800 text-gray-400 rounded-full text-xs"
+                  "How do I start genealogy research?",
+                  "What DNA tests should I take?",
+                  "How to find immigration records?",
+                  "Tips for building a family tree"
+                ].map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    onClick={() => setInputMessage(suggestion)}
+                    disabled={isLoading}
+                    className="px-3 py-1 bg-gray-800 text-gray-300 rounded-full text-xs hover:bg-gray-700 transition-colors disabled:opacity-50"
                   >
-                    {feature}
-                  </span>
+                    {suggestion}
+                  </button>
                 ))}
               </div>
             </div>

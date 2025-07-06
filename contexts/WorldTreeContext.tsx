@@ -207,9 +207,10 @@ export function WorldTreeProvider({ children }: { children: React.ReactNode }) {
       try {
         dispatch({ type: 'SET_LOADING', payload: true })
         
+        const newMemberId = `member-${Date.now()}`;
         const newMember: FamilyMember = {
           ...memberData,
-          id: `member-${Date.now()}`,
+          id: newMemberId,
           generation: (memberData.parents?.length || 0) > 0 ? 1 : 0,
           position: [
             Math.random() * 20 - 10,
@@ -218,7 +219,28 @@ export function WorldTreeProvider({ children }: { children: React.ReactNode }) {
           ]
         }
         
-        dispatch({ type: 'ADD_FAMILY_MEMBER', payload: newMember })
+        // Update parent's children array if this member has parents
+        if (memberData.parents && memberData.parents.length > 0) {
+          const updatedFamilyData = state.familyData.map(member => {
+            if (memberData.parents?.includes(member.id)) {
+              return {
+                ...member,
+                children: [...(member.children || []), newMemberId]
+              };
+            }
+            return member;
+          });
+          
+          // Add the new member to the updated family data
+          const finalFamilyData = [...updatedFamilyData, newMember];
+          dispatch({ type: 'SET_FAMILY_DATA', payload: finalFamilyData });
+        } else {
+          // No parents, just add the member
+          dispatch({ type: 'ADD_FAMILY_MEMBER', payload: newMember });
+        }
+        
+        console.log('✅ Added new family member:', newMember.name, 'with ID:', newMemberId);
+        console.log('🔗 Updated family data with parent-child relationships');
       } catch (error) {
         dispatch({ type: 'SET_ERROR', payload: (error as Error).message })
       } finally {

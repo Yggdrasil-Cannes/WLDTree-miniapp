@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import FamilyTreeScene from '../3d/FamilyTreeScene'
 import DNAHelixView from '../3d/DNAHelixView'
 import FamilyWorldMap from '../map/FamilyWorldMap'
+import { useRouter } from 'next/navigation'
 
 // Placeholder Chat View
 const ChatView = () => (
@@ -18,8 +19,32 @@ const ChatView = () => (
 const TabNavigation = () => {
   const [activeTab, setActiveTab] = useState('tree')
   const [activeSubTab, setActiveSubTab] = useState('3d') // For tree view: '3d' or 'dna'
+  const router = useRouter()
 
   console.log('🎯 TabNavigation: Component loaded, activeTab:', activeTab, 'activeSubTab:', activeSubTab)
+
+  const handleTabChange = (tab: string) => {
+    console.log('🎯 TabNavigation: Switching to tab:', tab)
+    setActiveTab(tab)
+    
+    // Navigate to the appropriate page
+    switch (tab) {
+      case 'tree':
+        router.push('/tree')
+        break
+      case 'map':
+        router.push('/map')
+        break
+      case 'chat':
+        router.push('/chat')
+        break
+      case 'request':
+        router.push('/requests')
+        break
+      default:
+        router.push('/tree')
+    }
+  }
 
   const renderTreeContent = () => {
     if (activeSubTab === 'dna') {
@@ -41,6 +66,17 @@ const TabNavigation = () => {
       case 'chat':
         console.log('🎯 TabNavigation: Switching to Chat tab')
         return <ChatView />
+      case 'request':
+        console.log('🎯 TabNavigation: Switching to Request tab')
+        // This will be handled by navigation, but we can show a placeholder
+        return (
+          <div className="flex items-center justify-center h-full bg-black text-white">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-4">Family Requests</h2>
+              <p className="text-gray-400">Navigate to requests page to view connections</p>
+            </div>
+          </div>
+        )
       default:
         return renderTreeContent()
     }
@@ -57,10 +93,7 @@ const TabNavigation = () => {
                 ? 'bg-green-500 text-white shadow-lg' 
                 : 'text-gray-400 hover:text-white'
             }`}
-            onClick={() => {
-              console.log('🎯 TabNavigation: Tree tab clicked')
-              setActiveTab('tree')
-            }}
+            onClick={() => handleTabChange('tree')}
           >
             🌳 Tree
           </button>
@@ -70,10 +103,7 @@ const TabNavigation = () => {
                 ? 'bg-blue-500 text-white shadow-lg' 
                 : 'text-gray-400 hover:text-white'
             }`}
-            onClick={() => {
-              console.log('🎯 TabNavigation: Map tab clicked')
-              setActiveTab('map')
-            }}
+            onClick={() => handleTabChange('map')}
           >
             🗺️ Map
           </button>
@@ -126,28 +156,19 @@ const TabNavigation = () => {
             icon="🌳" 
             label="Tree" 
             active={activeTab === 'tree'} 
-            onClick={() => {
-              console.log('🎯 TabNavigation: Bottom Tree tab clicked')
-              setActiveTab('tree')
-            }}
+            onClick={() => handleTabChange('tree')}
           />
           <TabButton 
             icon="💬" 
             label="Chat" 
             active={activeTab === 'chat'} 
-            onClick={() => {
-              console.log('🎯 TabNavigation: Bottom Chat tab clicked')
-              setActiveTab('chat')
-            }}
+            onClick={() => handleTabChange('chat')}
           />
           <TabButton 
             icon="🔗" 
             label="Request" 
             active={activeTab === 'request'} 
-            onClick={() => {
-              console.log('🎯 TabNavigation: Bottom Request tab clicked')
-              setActiveTab('request')
-            }}
+            onClick={() => handleTabChange('request')}
           />
         </div>
       </div>

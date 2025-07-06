@@ -18,6 +18,8 @@ export async function POST(req: NextRequest) {
       data: {
         userId,
         filename,
+        originalName: filename,
+        fileSize: encryptedData.length,
         fileType: 'OTHER',
         encryptedData,
         status: 'PENDING',

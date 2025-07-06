@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
+// Check for required environment variables
+if (!process.env.OPENAI_API_KEY) {
+  console.error('OPENAI_API_KEY is not configured');
+}
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -31,7 +36,30 @@ Always be helpful, knowledgeable, and focused on genealogy research.`;
 
 export async function POST(req: Request) {
   try {
+    // Check if OpenAI API key is configured
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('OPENAI_API_KEY not found in environment variables');
+      return NextResponse.json(
+        { 
+          error: 'Chat service not configured',
+          details: 'OpenAI API key is missing',
+          code: 'CONFIG_ERROR'
+        },
+        { status: 503 }
+      );
+    }
+
     const { message } = await req.json();
+
+    if (!message) {
+      return NextResponse.json(
+        { 
+          error: 'Message is required',
+          code: 'INVALID_REQUEST'
+        },
+        { status: 400 }
+      );
+    }
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo-preview",
@@ -46,10 +74,42 @@ export async function POST(req: Request) {
     const response = completion.choices[0]?.message?.content || "I'm here to help with your genealogy research. What would you like to know about tracing your family history?";
 
     return NextResponse.json({ response });
-  } catch (error) {
-    console.error('Error in genealogy guide chat:', error);
+  } catch (error: any) {
+    console.error('Error in genealogy guide chat:', {
+      message: error?.message,
+      name: error?.name,
+      stack: error?.stack
+    });
+    
+    // Handle specific OpenAI errors
+    if (error?.message?.includes('API key')) {
+      return NextResponse.json(
+        { 
+          error: 'Chat service configuration error',
+          details: 'Invalid API configuration',
+          code: 'CONFIG_ERROR'
+        },
+        { status: 503 }
+      );
+    }
+    
+    if (error?.message?.includes('rate limit')) {
+      return NextResponse.json(
+        { 
+          error: 'Chat service temporarily unavailable',
+          details: 'Rate limit exceeded',
+          code: 'RATE_LIMIT'
+        },
+        { status: 429 }
+      );
+    }
+
     return NextResponse.json(
-      { error: 'Failed to process your genealogy question' },
+      { 
+        error: 'Failed to process your genealogy question',
+        details: error?.message || 'Unknown error',
+        code: 'INTERNAL_ERROR'
+      },
       { status: 500 }
     );
   }

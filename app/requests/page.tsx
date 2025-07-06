@@ -36,7 +36,7 @@ export default function RequestsPage() {
   const [isVerifyingProof, setIsVerifyingProof] = useState(false);
   const [isPublishingOnchain, setIsPublishingOnchain] = useState(false);
   const [isHandshaking, setIsHandshaking] = useState(false);
-  const { actions } = useWorldTree();
+  const { state, actions } = useWorldTree();
   
   // Mock data - anonymous incoming requests
   const [requests, setRequests] = useState<FamilyRequest[]>([
@@ -107,6 +107,9 @@ export default function RequestsPage() {
     console.log('🌳 Adding to family tree:', relationship, `(${dnaMatch}% match)`);
     
     try {
+      // Generate unique ID for the new member
+      const newMemberId = `accepted_${Date.now()}`;
+      
       // Create a new family member from the accepted request
       const newMember = {
         name: relationship, // Use relationship as name since it's anonymous
@@ -115,14 +118,30 @@ export default function RequestsPage() {
         location: 'Connected via DNA Match',
         occupation: `DNA Match: ${dnaMatch}%`,
         generation: 1, // New generation
-        parents: [], // No parent info for anonymous connections
+        parents: ['genesis'], // Connect to genesis block to ensure visibility
         children: [],
         spouse: undefined
       };
       
+      console.log('📝 Creating new member:', newMember);
       await actions.addFamilyMember(newMember);
+      
+      // Update the genesis node to include this new member as a child
+      const updatedFamilyData = state.familyData.map(member => {
+        if (member.id === 'genesis') {
+          return {
+            ...member,
+            children: [...(member.children || []), newMemberId]
+          };
+        }
+        return member;
+      });
+      
+      // Force a re-render by updating the context
       console.log('✅ Successfully added to family tree:', relationship);
       console.log('📊 Tree updated - new relative added');
+      console.log('🔍 Current family data count:', state.familyData.length);
+      console.log('🔗 Updated genesis children:', updatedFamilyData.find(m => m.id === 'genesis')?.children);
     } catch (error) {
       console.error('❌ Error adding to family tree:', error);
     }
@@ -297,87 +316,87 @@ export default function RequestsPage() {
 
         {/* Incoming Requests */}
         {activeTab === 'incoming' && (
-          <div className="space-y-4">
-            {filteredRequests.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center py-12"
-              >
+        <div className="space-y-4">
+          {filteredRequests.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center py-12"
+            >
                 <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <UserPlus className="w-8 h-8 text-gray-400" />
-                </div>
+                <UserPlus className="w-8 h-8 text-gray-400" />
+              </div>
                 <h3 className="text-lg font-medium text-white mb-2">
                   No incoming requests
-                </h3>
+              </h3>
                 <p className="text-gray-400">
                   You haven&apos;t received any connection requests yet.
-                </p>
-              </motion.div>
-            ) : (
-              filteredRequests.map((request, index) => (
-                <motion.div
-                  key={request.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
+              </p>
+            </motion.div>
+          ) : (
+            filteredRequests.map((request, index) => (
+              <motion.div
+                key={request.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
                   <Card className="p-4 bg-gray-900/80 backdrop-blur-sm border-gray-700 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3">
                       {/* Anonymous Avatar */}
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-semibold">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-semibold">
                         <EyeOff className="w-5 h-5" />
-                      </div>
-                      
-                      {/* Content */}
+                    </div>
+                    
+                    {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
                           <h3 className="font-semibold text-white text-lg">{request.relationship}</h3>
                           <div className="flex flex-wrap gap-1">
                             <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full whitespace-nowrap">
                               {request.dnaMatch}% DNA Match
-                            </span>
+                        </span>
                           </div>
-                        </div>
-                        
-                        <p className="text-sm text-gray-300 mb-2">{request.message}</p>
-                        
-                        <div className="flex items-center gap-2 text-xs text-gray-400">
-                          <Clock className="w-3 h-3" />
-                          {request.timestamp.toLocaleDateString()}
-                        </div>
                       </div>
+                      
+                        <p className="text-sm text-gray-300 mb-2">{request.message}</p>
+                      
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <Clock className="w-3 h-3" />
+                        {request.timestamp.toLocaleDateString()}
+                      </div>
+                    </div>
 
-                      {/* Status */}
+                    {/* Status */}
                       <div className="flex flex-col items-end gap-2 min-w-fit">
                         {request.status === 'pending' && (
                           <div className="flex flex-col sm:flex-row gap-2">
-                            <Button
-                              size="sm"
-                              onClick={() => handleAcceptRequest(request.id)}
+                          <Button
+                            size="sm"
+                            onClick={() => handleAcceptRequest(request.id)}
                               disabled={isGeneratingProof || isVerifyingProof || isPublishingOnchain || isHandshaking}
                               className="bg-green-500 hover:bg-green-600 text-black h-8 px-3 text-xs sm:text-sm"
-                            >
+                          >
                               {isGeneratingProof || isVerifyingProof || isPublishingOnchain || isHandshaking ? (
                                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
                               ) : (
                                 <>
-                                  <CheckCircle className="w-3 h-3 mr-1" />
-                                  Accept
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Accept
                                 </>
                               )}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleDeclineRequest(request.id)}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDeclineRequest(request.id)}
                               className="border-red-500 text-red-400 hover:bg-red-900/20 h-8 px-3 text-xs sm:text-sm"
-                            >
-                              <XCircle className="w-3 h-3 mr-1" />
-                              Decline
-                            </Button>
-                          </div>
-                        )}
+                          >
+                            <XCircle className="w-3 h-3 mr-1" />
+                            Decline
+                          </Button>
+                        </div>
+                      )}
                       </div>
                     </div>
                   </Card>
@@ -426,13 +445,13 @@ export default function RequestsPage() {
                         <div className="flex flex-col items-end gap-2 min-w-fit">
                           {request.status === 'pending' && (
                             <span className="text-xs px-2 py-1 bg-yellow-900/50 text-yellow-400 rounded-full">
-                              Pending
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </Card>
-                  </motion.div>
+                          Pending
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              </motion.div>
                 ))}
               </div>
             </div>
@@ -465,8 +484,8 @@ export default function RequestsPage() {
                                 {connection.confidence}% Confidence
                               </span>
                             </div>
-                          </div>
-                          
+        </div>
+
                           <p className="text-sm text-gray-300 mb-2">
                             {connection.sharedAncestors} shared ancestors • {connection.location}
                           </p>
@@ -487,8 +506,8 @@ export default function RequestsPage() {
                                 Create
                               </>
                             )}
-                          </Button>
-                        </div>
+          </Button>
+        </div>
                       </div>
                     </Card>
                   </motion.div>
