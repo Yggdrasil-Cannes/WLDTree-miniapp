@@ -36,6 +36,7 @@
     "@worldcoin/minikit-js": "^1.9.6",
     "@worldcoin/minikit-react": "^1.9.7",
     "ai": "^4.1.25",
+    "axios": "^1.10.0",
     "bcryptjs": "^3.0.2",
     "canvas-confetti": "^1.9.3",
     "class-variance-authority": "^0.7.1",

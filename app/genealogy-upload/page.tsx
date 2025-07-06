@@ -61,18 +61,11 @@ export default function GenealogyUploadPage() {
       }
       logStep("Encrypting file...");
       const encrypted = await encryptCsv(text, password);
-    //   logStep("Uploading encrypted file to server...");
-    //   const res = await fetch("/api/genealogy-upload", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({ filename: file.name, encryptedData: encrypted }),
-    //   });
-    //   if (!res.ok) {
-    //     const err = await res.json();
-    //     logStep(`Upload failed: ${err.error || res.status}`);
-    //     setStep("password");
-        // return;
-    //   }
+      const response = await fetch(`https://publisher.testnet.walrus.atalma.io/v1/blobs?epochs=5`, {
+        method: 'PUT',
+        body: encrypted,
+      });
+      console.log(response)
       logStep("Upload successful! Redirecting to quiz...");
       localStorage.setItem('data', encrypted);
       setTimeout(() => router.push("/quiz"), 1200);
@@ -95,7 +88,7 @@ export default function GenealogyUploadPage() {
             </label>
             <div className="w-full flex flex-col gap-3">
               <div className="text-center text-gray-400 text-sm mb-2">or</div>
-              <button 
+              <button
                 onClick={handleSkipUpload}
                 className="w-full py-3 rounded-lg bg-gray-700 text-gray-300 font-semibold text-lg hover:bg-gray-600 transition border border-gray-600"
               >
@@ -119,7 +112,7 @@ export default function GenealogyUploadPage() {
               />
             </div>
             <div className="w-full flex gap-3">
-              <button 
+              <button
                 type="button"
                 onClick={() => {
                   setStep("drop");
