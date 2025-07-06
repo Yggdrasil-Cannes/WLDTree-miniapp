@@ -2,43 +2,63 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, UserPlus, MessageSquare, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Users, UserPlus, MessageSquare, CheckCircle, XCircle, Clock, Shield, Zap, Link, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useWorldTree } from '../../contexts/WorldTreeContext';
 
 interface FamilyRequest {
   id: string;
   type: 'incoming' | 'outgoing';
-  name: string;
+  name?: string; // Optional for anonymous incoming requests
   relationship: string;
   avatar?: string;
   message: string;
   timestamp: Date;
   status: 'pending' | 'accepted' | 'declined';
+  dnaMatch?: number; // DNA match percentage
+  zkProof?: string; // ZK proof of relativeness
+  isAnonymous?: boolean;
+}
+
+interface PotentialConnection {
+  id: string;
+  relationship: string;
+  dnaMatch: number;
+  sharedAncestors: number;
+  confidence: number;
+  location?: string;
 }
 
 export default function RequestsPage() {
   const [activeTab, setActiveTab] = useState<'incoming' | 'outgoing'>('incoming');
+  const [isGeneratingProof, setIsGeneratingProof] = useState(false);
+  const [isVerifyingProof, setIsVerifyingProof] = useState(false);
+  const [isPublishingOnchain, setIsPublishingOnchain] = useState(false);
+  const [isHandshaking, setIsHandshaking] = useState(false);
+  const { actions } = useWorldTree();
   
-  // Mock data - in real app, this would come from API
-  const [requests] = useState<FamilyRequest[]>([
+  // Mock data - anonymous incoming requests
+  const [requests, setRequests] = useState<FamilyRequest[]>([
     {
       id: '1',
       type: 'incoming',
-      name: 'Sarah Johnson',
       relationship: 'Potential Sister',
       message: 'Hi! I think we might be related. Our DNA shows a 25% match.',
       timestamp: new Date('2024-01-15'),
       status: 'pending',
+      dnaMatch: 25,
+      isAnonymous: true,
     },
     {
       id: '2',
       type: 'incoming',
-      name: 'Michael Chen',
       relationship: 'Potential 2nd Cousin',
-      message: 'I found your profile while researching the Chen family line.',
+      message: 'I found your profile while researching family connections.',
       timestamp: new Date('2024-01-14'),
       status: 'pending',
+      dnaMatch: 12,
+      isAnonymous: true,
     },
     {
       id: '3',
@@ -48,19 +68,189 @@ export default function RequestsPage() {
       message: 'Hello! I believe you might be my father\'s sister.',
       timestamp: new Date('2024-01-13'),
       status: 'pending',
+      dnaMatch: 50,
+    },
+  ]);
+
+  // Mock potential connections for outgoing tab
+  const [potentialConnections, setPotentialConnections] = useState<PotentialConnection[]>([
+    {
+      id: 'pc1',
+      relationship: 'Potential Sister',
+      dnaMatch: 25,
+      sharedAncestors: 2,
+      confidence: 85,
+      location: 'New York, USA',
+    },
+    {
+      id: 'pc2',
+      relationship: 'Potential 2nd Cousin',
+      dnaMatch: 12,
+      sharedAncestors: 4,
+      confidence: 72,
+      location: 'California, USA',
+    },
+    {
+      id: 'pc3',
+      relationship: 'Potential Uncle',
+      dnaMatch: 50,
+      sharedAncestors: 1,
+      confidence: 95,
+      location: 'Texas, USA',
     },
   ]);
 
   const filteredRequests = requests.filter(req => req.type === activeTab);
 
-  const handleAcceptRequest = (id: string) => {
-    console.log('Accept request:', id);
-    // In real app, make API call to accept
+  // Add to tree functionality
+  const addToTree = async (relationship: string, dnaMatch: number) => {
+    console.log('🌳 Adding to family tree:', relationship, `(${dnaMatch}% match)`);
+    
+    try {
+      // Create a new family member from the accepted request
+      const newMember = {
+        name: relationship, // Use relationship as name since it's anonymous
+        gender: undefined, // No gender info for anonymous connections
+        birth: new Date().getFullYear().toString(),
+        location: 'Connected via DNA Match',
+        occupation: `DNA Match: ${dnaMatch}%`,
+        generation: 1, // New generation
+        parents: [], // No parent info for anonymous connections
+        children: [],
+        spouse: undefined
+      };
+      
+      await actions.addFamilyMember(newMember);
+      console.log('✅ Successfully added to family tree:', relationship);
+      console.log('📊 Tree updated - new relative added');
+    } catch (error) {
+      console.error('❌ Error adding to family tree:', error);
+    }
+  };
+
+  // Mock ZK proof generation
+  const generateZKProof = async (requestId: string) => {
+    console.log('Generating ZK proof for request:', requestId);
+    setIsGeneratingProof(true);
+    
+    // Simulate ZK proof generation
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    console.log('ZK proof generated successfully');
+    setIsGeneratingProof(false);
+    return 'zk_proof_hash_' + requestId;
+  };
+
+  // Mock ZK proof verification
+  const verifyZKProof = async (proof: string) => {
+    console.log('Verifying ZK proof:', proof);
+    setIsVerifyingProof(true);
+    
+    // Simulate verification
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    console.log('ZK proof verified successfully');
+    setIsVerifyingProof(false);
+    return true;
+  };
+
+  // Mock onchain publishing
+  const publishProofOnchain = async (proof: string) => {
+    console.log('Publishing proof onchain:', proof);
+    setIsPublishingOnchain(true);
+    
+    // Simulate blockchain transaction
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    console.log('Proof published onchain successfully');
+    setIsPublishingOnchain(false);
+    return 'tx_hash_' + Date.now();
+  };
+
+  // Mock confidential handshake
+  const performConfidentialHandshake = async (connectionId: string) => {
+    console.log('Performing confidential handshake with:', connectionId);
+    setIsHandshaking(true);
+    
+    // Simulate cryptographic handshake
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    
+    console.log('Confidential handshake completed');
+    setIsHandshaking(false);
+    return true;
+  };
+
+  const handleAcceptRequest = async (id: string) => {
+    console.log('=== ACCEPTING REQUEST FLOW ===');
+    console.log('Step 1: Starting ZK proof generation for request:', id);
+    
+    try {
+      // Step 1: Generate ZK proof
+      const proof = await generateZKProof(id);
+      console.log('Step 2: ZK proof generated, starting verification');
+      
+      // Step 2: Verify the proof
+      const isVerified = await verifyZKProof(proof);
+      console.log('Step 3: ZK proof verified, publishing onchain');
+      
+      if (isVerified) {
+        // Step 3: Publish proof onchain
+        const txHash = await publishProofOnchain(proof);
+        console.log('Step 4: Proof published onchain, performing handshake');
+        
+        // Step 4: Perform confidential handshake
+        await performConfidentialHandshake(id);
+        
+        // Step 5: Add to tree and remove from requests
+        const request = requests.find(r => r.id === id);
+        if (request) {
+          await addToTree(request.relationship, request.dnaMatch || 0);
+          setRequests(prev => prev.filter(r => r.id !== id));
+        }
+        
+        console.log('✅ Connection established successfully!');
+        console.log('📋 Transaction Hash:', txHash);
+        console.log('🔐 Confidential handshake completed');
+        console.log('🌳 Added to family tree');
+      }
+    } catch (error) {
+      console.error('❌ Error establishing connection:', error);
+    }
   };
 
   const handleDeclineRequest = (id: string) => {
     console.log('Decline request:', id);
-    // In real app, make API call to decline
+    // Remove from requests list
+    setRequests(prev => prev.filter(r => r.id !== id));
+  };
+
+  const handleCreateConnection = async (connection: PotentialConnection) => {
+    console.log('=== CREATING CONNECTION FLOW ===');
+    console.log('Target connection:', connection.relationship, `(${connection.dnaMatch}% match)`);
+    
+    try {
+      // Step 1: Generate ZK proof
+      const proof = await generateZKProof(connection.id);
+      console.log('Step 2: ZK proof generated, starting verification');
+      
+      // Step 2: Verify the proof
+      const isVerified = await verifyZKProof(proof);
+      console.log('Step 3: ZK proof verified, publishing onchain');
+      
+      if (isVerified) {
+        // Step 3: Publish proof onchain
+        const txHash = await publishProofOnchain(proof);
+        
+        // Step 4: Remove from potential connections
+        setPotentialConnections(prev => prev.filter(c => c.id !== connection.id));
+        
+        console.log('✅ Connection request sent successfully!');
+        console.log('📋 Transaction Hash:', txHash);
+        console.log('🔍 Request is now visible to the target user');
+      }
+    } catch (error) {
+      console.error('❌ Error creating connection:', error);
+    }
   };
 
   return (
@@ -105,103 +295,232 @@ export default function RequestsPage() {
           </button>
         </div>
 
-        {/* Request List */}
-        <div className="space-y-4">
-          {filteredRequests.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center py-12"
-            >
-              <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                <UserPlus className="w-8 h-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-white mb-2">
-                No {activeTab} requests
-              </h3>
-              <p className="text-gray-400">
-                {activeTab === 'incoming' 
-                  ? 'You haven\'t received any connection requests yet.'
-                  : 'You haven\'t sent any connection requests yet.'
-                }
-              </p>
-            </motion.div>
-          ) : (
-            filteredRequests.map((request, index) => (
+        {/* Incoming Requests */}
+        {activeTab === 'incoming' && (
+          <div className="space-y-4">
+            {filteredRequests.length === 0 ? (
               <motion.div
-                key={request.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
+                className="text-center py-12"
               >
-                <Card className="p-4 bg-gray-900/80 backdrop-blur-sm border-gray-700 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-start gap-3">
-                    {/* Avatar */}
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-semibold">
-                      {request.name.charAt(0)}
-                    </div>
-                    
-                    {/* Content */}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-white">{request.name}</h3>
-                        <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">
-                          {request.relationship}
-                        </span>
+                <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <UserPlus className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-white mb-2">
+                  No incoming requests
+                </h3>
+                <p className="text-gray-400">
+                  You haven&apos;t received any connection requests yet.
+                </p>
+              </motion.div>
+            ) : (
+              filteredRequests.map((request, index) => (
+                <motion.div
+                  key={request.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card className="p-4 bg-gray-900/80 backdrop-blur-sm border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-start gap-3">
+                      {/* Anonymous Avatar */}
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-semibold">
+                        <EyeOff className="w-5 h-5" />
                       </div>
                       
-                      <p className="text-sm text-gray-300 mb-2">{request.message}</p>
-                      
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <Clock className="w-3 h-3" />
-                        {request.timestamp.toLocaleDateString()}
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-white text-lg">{request.relationship}</h3>
+                          <div className="flex flex-wrap gap-1">
+                            <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full whitespace-nowrap">
+                              {request.dnaMatch}% DNA Match
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <p className="text-sm text-gray-300 mb-2">{request.message}</p>
+                        
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                          <Clock className="w-3 h-3" />
+                          {request.timestamp.toLocaleDateString()}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Status */}
-                    <div className="flex flex-col items-end gap-2">
-                      {request.status === 'pending' && activeTab === 'incoming' && (
-                        <div className="flex gap-2">
+                      {/* Status */}
+                      <div className="flex flex-col items-end gap-2 min-w-fit">
+                        {request.status === 'pending' && (
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleAcceptRequest(request.id)}
+                              disabled={isGeneratingProof || isVerifyingProof || isPublishingOnchain || isHandshaking}
+                              className="bg-green-500 hover:bg-green-600 text-black h-8 px-3 text-xs sm:text-sm"
+                            >
+                              {isGeneratingProof || isVerifyingProof || isPublishingOnchain || isHandshaking ? (
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                              ) : (
+                                <>
+                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                  Accept
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDeclineRequest(request.id)}
+                              className="border-red-500 text-red-400 hover:bg-red-900/20 h-8 px-3 text-xs sm:text-sm"
+                            >
+                              <XCircle className="w-3 h-3 mr-1" />
+                              Decline
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* Outgoing Requests & Potential Connections */}
+        {activeTab === 'outgoing' && (
+          <div className="space-y-6">
+            {/* Existing Outgoing Requests */}
+            <div>
+              <h3 className="text-lg font-medium text-white mb-4">Your Requests</h3>
+              <div className="space-y-4">
+                {requests.filter(r => r.type === 'outgoing').map((request, index) => (
+                  <motion.div
+                    key={request.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <Card className="p-4 bg-gray-900/80 backdrop-blur-sm border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex items-start gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-400 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0">
+                          {request.name?.charAt(0) || 'U'}
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-white text-lg">{request.name}</h3>
+                            <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full whitespace-nowrap">
+                              {request.relationship}
+                            </span>
+                          </div>
+                          
+                          <p className="text-sm text-gray-300 mb-2">{request.message}</p>
+                          
+                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                            <Clock className="w-3 h-3" />
+                            {request.timestamp.toLocaleDateString()}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col items-end gap-2 min-w-fit">
+                          {request.status === 'pending' && (
+                            <span className="text-xs px-2 py-1 bg-yellow-900/50 text-yellow-400 rounded-full">
+                              Pending
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            {/* Potential Connections */}
+            <div>
+              <h3 className="text-lg font-medium text-white mb-4">Potential Connections</h3>
+              <div className="space-y-4">
+                {potentialConnections.map((connection, index) => (
+                  <motion.div
+                    key={connection.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <Card className="p-4 bg-gray-900/80 backdrop-blur-sm border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex items-start gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-400 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0">
+                          <Link className="w-5 h-5" />
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-white text-lg">{connection.relationship}</h3>
+                            <div className="flex flex-wrap gap-1">
+                              <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full whitespace-nowrap">
+                                {connection.dnaMatch}% DNA Match
+                              </span>
+                              <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full whitespace-nowrap">
+                                {connection.confidence}% Confidence
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <p className="text-sm text-gray-300 mb-2">
+                            {connection.sharedAncestors} shared ancestors • {connection.location}
+                          </p>
+                        </div>
+
+                        <div className="flex flex-col items-end gap-2 min-w-fit">
                           <Button
                             size="sm"
-                            onClick={() => handleAcceptRequest(request.id)}
-                            className="bg-green-500 hover:bg-green-600 text-black h-8 px-3"
+                            onClick={() => handleCreateConnection(connection)}
+                            disabled={isGeneratingProof || isVerifyingProof || isPublishingOnchain}
+                            className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-black h-8 px-3 text-xs sm:text-sm"
                           >
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            Accept
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeclineRequest(request.id)}
-                            className="border-red-500 text-red-400 hover:bg-red-900/20 h-8 px-3"
-                          >
-                            <XCircle className="w-3 h-3 mr-1" />
-                            Decline
+                            {isGeneratingProof || isVerifyingProof || isPublishingOnchain ? (
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                            ) : (
+                              <>
+                                <Shield className="w-3 h-3 mr-1" />
+                                Create
+                              </>
+                            )}
                           </Button>
                         </div>
-                      )}
-                      
-                      {request.status === 'pending' && activeTab === 'outgoing' && (
-                        <span className="text-xs px-2 py-1 bg-yellow-900/50 text-yellow-400 rounded-full">
-                          Pending
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>
-            ))
-          )}
-        </div>
+                      </div>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
-        {/* Send Request Button */}
-        <div className="mt-8">
-          <Button className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-black shadow-lg">
-            <UserPlus className="w-4 h-4 mr-2" />
-            Send Connection Request
-          </Button>
-        </div>
+        {/* Status Indicators */}
+        {(isGeneratingProof || isVerifyingProof || isPublishingOnchain || isHandshaking) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg"
+          >
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-400"></div>
+              <div>
+                <p className="text-sm font-medium text-blue-300">
+                  {isGeneratingProof && 'Generating ZK proof...'}
+                  {isVerifyingProof && 'Verifying ZK proof...'}
+                  {isPublishingOnchain && 'Publishing proof onchain...'}
+                  {isHandshaking && 'Performing confidential handshake...'}
+                </p>
+                <p className="text-xs text-blue-400">
+                  This may take a few moments
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </div>
     </div>
   );
