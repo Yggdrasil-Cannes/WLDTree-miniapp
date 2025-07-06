@@ -207,6 +207,9 @@ model DNAUpload {
   fileSize        Int
   fileType        DNAFileType
   
+  // Encrypted genealogy data
+  encryptedData   String?
+  
   // Processing status
   status          ProcessingStatus @default(PENDING)
   processedAt     DateTime?

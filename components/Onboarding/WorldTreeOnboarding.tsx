@@ -161,42 +161,42 @@ function DNAIntroduction({ onComplete, playFeedback, setWaitingForClick }: {
           const y = (i - 10) * 0.4
           const angle = (i / 20) * Math.PI * 2
           const radius = 1.5
-          
-          return (
-            <group key={i}>
+
+        return (
+          <group key={i}>
               {/* Left strand */}
-              <Sphere
-                position={[
-                  Math.cos(angle) * radius,
-                  y,
-                  Math.sin(angle) * radius
-                ]}
+            <Sphere
+              position={[
+                Math.cos(angle) * radius,
+                y,
+                Math.sin(angle) * radius
+              ]}
                 args={[0.15, 16, 16]}
-              >
-                <meshStandardMaterial 
+            >
+              <meshStandardMaterial 
                   color={i % 2 === 0 ? "#ff6b9d" : "#4ecdc4"}
                   emissive={i % 2 === 0 ? "#ff6b9d" : "#4ecdc4"}
                   emissiveIntensity={0.3}
-                />
-              </Sphere>
+              />
+            </Sphere>
 
               {/* Right strand */}
-              <Sphere
-                position={[
-                  Math.cos(angle + Math.PI) * radius,
-                  y,
-                  Math.sin(angle + Math.PI) * radius
-                ]}
+            <Sphere
+              position={[
+                Math.cos(angle + Math.PI) * radius,
+                y,
+                Math.sin(angle + Math.PI) * radius
+              ]}
                 args={[0.15, 16, 16]}
-              >
-                <meshStandardMaterial 
+            >
+              <meshStandardMaterial 
                   color={i % 2 === 0 ? "#4ecdc4" : "#ff6b9d"}
                   emissive={i % 2 === 0 ? "#4ecdc4" : "#ff6b9d"}
                   emissiveIntensity={0.3}
-                />
-              </Sphere>
+              />
+            </Sphere>
 
-              {/* Base pair connections */}
+            {/* Base pair connections */}
               <Cylinder
                 position={[0, y, 0]}
                 args={[0.02, 0.02, radius * 2]}
@@ -210,9 +210,9 @@ function DNAIntroduction({ onComplete, playFeedback, setWaitingForClick }: {
                   opacity={0.6}
                 />
               </Cylinder>
-            </group>
-          )
-        })}
+          </group>
+        )
+      })}
       </group>
 
       {/* Floating particles representing genetic information */}
@@ -276,47 +276,47 @@ function DNAHelixFormation({ onComplete, playFeedback, setWaitingForClick }: {
               ]}
               args={[0.12, 16, 16]}
             >
-              <meshStandardMaterial 
+                <meshStandardMaterial 
                 color={nucleotideColors[nucleotide1 as keyof typeof nucleotideColors]}
                 emissive={nucleotideColors[nucleotide1 as keyof typeof nucleotideColors]}
                 emissiveIntensity={0.4}
-                transparent
-                opacity={opacity}
-              />
+                  transparent
+                  opacity={opacity}
+                />
             </Sphere>
 
             {/* Right strand */}
             <Sphere
-              position={[
+                      position={[
                 Math.cos(angle + Math.PI) * radius,
                 y,
                 Math.sin(angle + Math.PI) * radius
-              ]}
+                      ]}
               args={[0.12, 16, 16]}
             >
-              <meshStandardMaterial 
+                      <meshStandardMaterial 
                 color={nucleotideColors[nucleotide2 as keyof typeof nucleotideColors]}
                 emissive={nucleotideColors[nucleotide2 as keyof typeof nucleotideColors]}
                 emissiveIntensity={0.4}
-                transparent
+                        transparent
                 opacity={opacity}
-              />
+                      />
             </Sphere>
 
             {/* Hydrogen bonds */}
-            <Cylinder
+              <Cylinder
               position={[0, y, 0]}
               args={[0.015, 0.015, radius * 2]}
               rotation={[0, 0, Math.PI / 2]}
-            >
-              <meshStandardMaterial 
+              >
+                <meshStandardMaterial 
                 color="#ffffff" 
                 emissive="#ffffff"
                 emissiveIntensity={0.3}
-                transparent
+                  transparent
                 opacity={opacity * 0.8}
-              />
-            </Cylinder>
+                />
+              </Cylinder>
           </group>
         )
       })}
@@ -355,18 +355,18 @@ function TreeSeedling({ onComplete, playFeedback, setWaitingForClick }: {
       {/* Tree Seed (DNA-inspired) */}
       <group position={[0, -2, 0]}>
         <Sphere args={[0.8, 32, 32]}>
-          <meshStandardMaterial 
-            color="#8B4513"
+        <meshStandardMaterial 
+          color="#8B4513" 
             emissive="#654321"
             emissiveIntensity={0.2}
-          />
+        />
         </Sphere>
-        
+
         {/* DNA pattern on seed */}
-        {Array.from({ length: 8 }).map((_, i) => {
-          const angle = (i / 8) * Math.PI * 2
+          {Array.from({ length: 8 }).map((_, i) => {
+            const angle = (i / 8) * Math.PI * 2
           const radius = 0.6
-          
+
           return (
             <group key={i}>
               <Sphere
@@ -383,44 +383,44 @@ function TreeSeedling({ onComplete, playFeedback, setWaitingForClick }: {
                   emissiveIntensity={0.3}
                 />
               </Sphere>
-            </group>
+        </group>
           )
         })}
       </group>
 
       {/* Growing Tree Trunk */}
       <group position={[0, 0, 0]}>
-        <Cylinder
+                  <Cylinder
           args={[0.3, 0.4, 4 * growthProgress]}
           position={[0, 2 * growthProgress - 2, 0]}
-        >
-          <meshStandardMaterial 
+                  >
+                    <meshStandardMaterial 
             color="#8B4513"
             emissive="#654321"
             emissiveIntensity={0.1}
-          />
-        </Cylinder>
+                    />
+                  </Cylinder>
 
         {/* First branches */}
         {growthProgress > 0.5 && (
           <>
-            <Cylinder
+                  <Cylinder
               args={[0.1, 0.15, 1.5]}
               position={[-1.5, 1, 0]}
               rotation={[0, 0, Math.PI / 4]}
-            >
+                  >
               <meshStandardMaterial color="#228B22" />
-            </Cylinder>
+                  </Cylinder>
             <Cylinder
               args={[0.1, 0.15, 1.5]}
               position={[1.5, 1, 0]}
               rotation={[0, 0, -Math.PI / 4]}
             >
               <meshStandardMaterial color="#228B22" />
-            </Cylinder>
+        </Cylinder>
           </>
         )}
-
+        
         {/* Leaves */}
         {growthProgress > 0.7 && (
           <>
@@ -470,11 +470,11 @@ function FamilyTreeGrowth({ onComplete, playFeedback, setWaitingForClick }: {
         args={[0.4, 0.5, 6]}
         position={[0, 0, 0]}
       >
-        <meshStandardMaterial 
+            <meshStandardMaterial 
           color="#8B4513"
           emissive="#654321"
           emissiveIntensity={0.1}
-        />
+            />
       </Cylinder>
 
       {/* Primary Branches */}
@@ -483,15 +483,15 @@ function FamilyTreeGrowth({ onComplete, playFeedback, setWaitingForClick }: {
         const radius = 2
         const height = 2 + Math.sin(i) * 1
         
-        return (
+          return (
           <group key={i}>
             <Cylinder
               args={[0.15, 0.2, 2.5]}
-              position={[
-                Math.cos(angle) * radius,
-                height,
-                Math.sin(angle) * radius
-              ]}
+                position={[
+                  Math.cos(angle) * radius,
+                  height,
+                  Math.sin(angle) * radius
+                ]}
               rotation={[
                 Math.PI / 6,
                 0,
@@ -504,9 +504,9 @@ function FamilyTreeGrowth({ onComplete, playFeedback, setWaitingForClick }: {
             {/* Secondary branches */}
             {treeGrowth > 0.5 && (
               <>
-                <Cylinder
+            <Cylinder
                   args={[0.08, 0.12, 1.5]}
-                  position={[
+              position={[
                     Math.cos(angle) * (radius + 1.2),
                     height + 1,
                     Math.sin(angle) * (radius + 1.2)
@@ -516,22 +516,22 @@ function FamilyTreeGrowth({ onComplete, playFeedback, setWaitingForClick }: {
                     0,
                     angle + Math.PI
                   ]}
-                >
+            >
                   <meshStandardMaterial color="#32CD32" />
-                </Cylinder>
+            </Cylinder>
                 <Cylinder
                   args={[0.08, 0.12, 1.5]}
-                  position={[
+              position={[
                     Math.cos(angle) * (radius + 1.2),
                     height + 1,
                     Math.sin(angle) * (radius + 1.2)
-                  ]}
+              ]}
                   rotation={[
                     -Math.PI / 4,
                     0,
                     angle
                   ]}
-                >
+            >
                   <meshStandardMaterial color="#32CD32" />
                 </Cylinder>
               </>
@@ -540,21 +540,21 @@ function FamilyTreeGrowth({ onComplete, playFeedback, setWaitingForClick }: {
             {/* Family member nodes */}
             {treeGrowth > 0.7 && (
               <Sphere
-                position={[
+              position={[
                   Math.cos(angle) * (radius + 2),
-                  height,
+                height,
                   Math.sin(angle) * (radius + 2)
-                ]}
+              ]}
                 args={[0.2, 16, 16]}
-              >
-                <meshStandardMaterial 
+            >
+              <meshStandardMaterial
                   color="#00ff88"
                   emissive="#00ff88"
                   emissiveIntensity={0.3}
-                />
+              />
               </Sphere>
             )}
-          </group>
+      </group>
         )
       })}
 
@@ -562,18 +562,18 @@ function FamilyTreeGrowth({ onComplete, playFeedback, setWaitingForClick }: {
       {treeGrowth > 0.3 && (
         <group position={[0, 4, 0]}>
           <Sphere args={[3, 32, 32]}>
-            <meshStandardMaterial 
+              <meshStandardMaterial
               color="#228B22"
-              transparent
+                transparent
               opacity={0.8}
-            />
+              />
           </Sphere>
         </group>
       )}
 
       {/* Connection lines between family members */}
       {treeGrowth > 0.8 && (
-        <group>
+      <group>
           {Array.from({ length: 4 }).map((_, i) => {
             const angle1 = (i / 4) * Math.PI * 2
             const angle2 = ((i + 1) / 4) * Math.PI * 2
@@ -596,10 +596,10 @@ function FamilyTreeGrowth({ onComplete, playFeedback, setWaitingForClick }: {
                 ]}
                 color="#00ff88"
                 lineWidth={2}
-              />
+            />
             )
           })}
-        </group>
+      </group>
       )}
 
       {/* Growth particles */}
@@ -636,40 +636,40 @@ function SecurityVerification({ onComplete, playFeedback, setWaitingForClick }: 
       {/* Central World ID Symbol */}
       <group position={[0, 0, 0]}>
         <Sphere args={[1.5, 32, 32]}>
-          <meshStandardMaterial 
+                    <meshStandardMaterial 
             color="#00ff88"
             emissive="#00ff88"
             emissiveIntensity={0.3}
-            transparent
+                      transparent
             opacity={0.8}
-          />
-        </Sphere>
-        
+                    />
+                  </Sphere>
+                
         {/* World ID Globe */}
         <Sphere args={[1, 32, 32]}>
-          <meshStandardMaterial 
+                        <meshStandardMaterial 
             color="#4ecdc4"
             emissive="#4ecdc4"
             emissiveIntensity={0.2}
-          />
-        </Sphere>
-      </group>
+                        />
+                      </Sphere>
+              </group>
 
       {/* Protective Shield */}
       {shieldFormation > 0.3 && (
         <group position={[0, 0, 0]}>
           <Sphere args={[3, 32, 32]}>
-            <meshStandardMaterial 
+                        <meshStandardMaterial 
               color="#00ff88"
               emissive="#00ff88"
               emissiveIntensity={0.1}
-              transparent
+                          transparent
               opacity={0.3}
-              wireframe
-            />
-          </Sphere>
-        </group>
-      )}
+                      wireframe
+                    />
+                  </Sphere>
+              </group>
+            )}
 
       {/* Security particles */}
       <FloatingParticles count={20} color="#00ff88" radius={5} />
@@ -709,37 +709,37 @@ function ReadyToBegin({ onComplete, playFeedback, setWaitingForClick }: {
 
         {/* Tree canopy */}
         <Sphere args={[4, 32, 32]} position={[0, 6, 0]}>
-          <meshStandardMaterial 
+            <meshStandardMaterial 
             color="#228B22"
             transparent
             opacity={0.9}
-          />
-        </Sphere>
+            />
+          </Sphere>
 
         {/* Family member nodes */}
         {Array.from({ length: 6 }).map((_, i) => {
           const angle = (i / 6) * Math.PI * 2
           const radius = 3
           const height = 4 + Math.sin(i) * 2
-          
-          return (
-            <Sphere
+
+            return (
+                <Sphere
               key={i}
-              position={[
+                  position={[
                 Math.cos(angle) * radius,
                 height,
                 Math.sin(angle) * radius
-              ]}
+                  ]}
               args={[0.3, 16, 16]}
-            >
-              <meshStandardMaterial 
-                color="#00ff88"
+                >
+                  <meshStandardMaterial 
+                    color="#00ff88" 
                 emissive="#00ff88"
                 emissiveIntensity={0.4}
-              />
-            </Sphere>
-          )
-        })}
+                  />
+                </Sphere>
+            )
+          })}
       </group>
 
       {/* Celebration particles */}
@@ -820,7 +820,7 @@ function OnboardingUI({
             </motion.div>
           )}
         </motion.div>
-      </div>
+        </div>
     </>
   )
 }

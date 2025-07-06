@@ -46,8 +46,15 @@ export default function Home() {
         console.log('Main App: User completed quiz, redirecting to tree');
         router.push('/tree');
       } else {
-        console.log('Main App: User needs to complete quiz');
-        router.push('/quiz');
+        // Check if genealogy upload is done
+        const genealogyUploaded = localStorage.getItem('worldtree_genealogy_uploaded');
+        if (genealogyUploaded === 'true' || genealogyUploaded === 'skipped') {
+          console.log('Main App: Genealogy uploaded or skipped, redirecting to quiz');
+          router.push('/quiz');
+        } else {
+          console.log('Main App: User needs to upload genealogy data');
+          router.push('/genealogy-upload');
+        }
       }
       return;
     }
@@ -82,9 +89,9 @@ export default function Home() {
   };
 
   const handleVerificationComplete = () => {
-    console.log('Main App: Verification completed, redirecting to quiz');
-    // After successful World ID verification, redirect to quiz
-    router.push('/quiz');
+    console.log('Main App: Verification completed, redirecting to genealogy upload');
+    // After successful World ID verification, redirect to genealogy upload
+    router.push('/genealogy-upload');
   };
 
   // Loading state

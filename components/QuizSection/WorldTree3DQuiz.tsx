@@ -8,7 +8,8 @@ import {
   Cylinder, 
   Html,
   Float,
-  Points
+  Points,
+  Line
 } from '@react-three/drei'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -203,16 +204,16 @@ export default function WorldTree3DQuiz({ onComplete }: QuizProps) {
   const hasSelection = Boolean(currentAnswer?.selectedOptions?.length && currentAnswer.selectedOptions.length > 0)
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden">
+    <div className="fixed inset-0 bg-gradient-to-br from-black via-blue-900 to-black overflow-hidden">
       {/* 3D Scene */}
       <Canvas
         camera={{ position: [0, 0, 15], fov: 60 }}
         gl={{ antialias: true, alpha: true }}
         dpr={[1, 2]}
       >
-        <ambientLight intensity={0.3} />
-        <pointLight position={[10, 10, 10]} intensity={1} color="#00ff88" />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} color="#4ecdc4" />
+        <ambientLight intensity={0.4} />
+        <pointLight position={[10, 10, 10]} intensity={1.2} color="#00ff88" />
+        <pointLight position={[-10, -10, -10]} intensity={0.8} color="#4ecdc4" />
         
         <QuizVisualizer 
           question={currentQuestion}
@@ -221,7 +222,7 @@ export default function WorldTree3DQuiz({ onComplete }: QuizProps) {
           totalQuestions={quizQuestions.length}
         />
 
-        <FloatingParticles count={80} color="#ffffff" />
+        <FloatingParticles count={40} color="#00ff88" radius={8} />
 
         <EffectComposer>
           <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.9} intensity={1.2} />
@@ -245,7 +246,7 @@ export default function WorldTree3DQuiz({ onComplete }: QuizProps) {
   )
 }
 
-// 3D Quiz Visualizer Component
+// Enhanced 3D Quiz Visualizer Component
 function QuizVisualizer({ 
   question, 
   currentAnswer, 
@@ -262,100 +263,141 @@ function QuizVisualizer({
 
   useFrame((state) => {
     if (groupRef.current) {
-      // Base rotation
-      groupRef.current.rotation.y = state.clock.elapsedTime * 0.3
+      // Gentle rotation
+      groupRef.current.rotation.y = state.clock.elapsedTime * 0.2
       
-      // Animate phase changes
-      const phase = Math.sin(state.clock.elapsedTime * 2) * 0.5 + 0.5
+      // Subtle animation phase
+      const phase = Math.sin(state.clock.elapsedTime * 1.5) * 0.3 + 0.7
       setAnimationPhase(phase)
     }
   })
 
-  // Create DNA-like helix for current question
-  const helixElements = useMemo(() => {
-    return Array.from({ length: 30 }).map((_, i) => {
-      const y = (i - 15) * 0.4
-      const angle = (i / 30) * Math.PI * 4
-      const radius = 3
-      const isSelected = currentAnswer?.selectedOptions?.includes(question.options[i % question.options.length]?.id) || false
+  // Create organized DNA structure representing the question
+  const dnaElements = useMemo(() => {
+    return Array.from({ length: question.options.length }).map((_, i) => {
+      const angle = (i / question.options.length) * Math.PI * 2
+      const radius = 2.5
+      const height = Math.sin(i * 0.8) * 1.5
+      const isSelected = currentAnswer?.selectedOptions?.includes(question.options[i]?.id) || false
       
       return {
         position: [
           Math.cos(angle) * radius,
-          y,
+          height,
           Math.sin(angle) * radius
         ] as [number, number, number],
         isSelected,
-        index: i
+        index: i,
+        option: question.options[i]
       }
     })
   }, [question, currentAnswer])
 
   return (
     <group ref={groupRef}>
-      {/* Central core representing the question */}
-      <Sphere args={[1.5, 16, 16]} position={[0, 0, 0]}>
-        <meshStandardMaterial 
-          color="#00ff88" 
-          emissive="#00aa55"
-          emissiveIntensity={0.3 + animationPhase * 0.2}
-        />
-      </Sphere>
+      {/* Central question core */}
+      <group position={[0, 0, 0]}>
+        <Sphere args={[1.2, 32, 32]}>
+          <meshStandardMaterial 
+            color="#00ff88" 
+            emissive="#00aa55"
+            emissiveIntensity={0.4}
+            transparent
+            opacity={0.9}
+          />
+        </Sphere>
+        
+        {/* Question indicator */}
+        <Text
+          position={[0, 0, 1.5]}
+          fontSize={0.3}
+          color="#ffffff"
+          anchorX="center"
+          anchorY="middle"
+        >
+          Q{questionIndex + 1}
+        </Text>
+      </group>
 
-      {/* DNA-like helix structure */}
-      {helixElements.map((element, i) => (
+      {/* DNA-like structure with question options */}
+      {dnaElements.map((element, i) => (
         <group key={i}>
+          {/* Option node */}
           <Sphere
             position={element.position}
-            args={[0.15, 12, 12]}
+            args={[0.2, 16, 16]}
           >
             <meshStandardMaterial 
-              color={element.isSelected ? "#FFD700" : "#ff6b9d"}
-              emissive={element.isSelected ? "#FFD700" : "#ff6b9d"}
+              color={element.isSelected ? "#FFD700" : "#4ecdc4"}
+              emissive={element.isSelected ? "#FFD700" : "#4ecdc4"}
               emissiveIntensity={element.isSelected ? 0.6 : 0.3}
               transparent
-              opacity={0.8}
+              opacity={0.9}
             />
           </Sphere>
 
-          {/* Connection lines */}
-          {i < helixElements.length - 1 && (
-            <Cylinder
-              position={[
-                (element.position[0] + helixElements[i + 1].position[0]) / 2,
-                (element.position[1] + helixElements[i + 1].position[1]) / 2,
-                (element.position[2] + helixElements[i + 1].position[2]) / 2
-              ]}
-              args={[0.02, 0.02, 0.4]}
-              rotation={[Math.PI / 2, 0, 0]}
-            >
-              <meshStandardMaterial 
-                color="#4ecdc4" 
-                emissive="#4ecdc4"
-                emissiveIntensity={0.2}
-                transparent
-                opacity={0.6}
-              />
-            </Cylinder>
-          )}
+          {/* Connection to center */}
+          <Line
+            points={[
+              [0, 0, 0],
+              element.position
+            ]}
+            color={element.isSelected ? "#FFD700" : "#4ecdc4"}
+            lineWidth={element.isSelected ? 3 : 1}
+            transparent
+            opacity={0.6}
+          />
+
+          {/* Option label */}
+          <Text
+            position={[
+              element.position[0] * 1.3,
+              element.position[1],
+              element.position[2] * 1.3
+            ]}
+            fontSize={0.15}
+            color="#ffffff"
+            anchorX="center"
+            anchorY="middle"
+          >
+            {element.option.icon}
+          </Text>
         </group>
       ))}
 
       {/* Progress indicator */}
-      <Text
-        position={[0, -8, 0]}
-        fontSize={0.8}
-        color="#ffffff"
-        anchorX="center"
-        anchorY="middle"
-      >
-        {questionIndex + 1} / {totalQuestions}
-      </Text>
+      <group position={[0, -6, 0]}>
+        <Text
+          fontSize={0.4}
+          color="#ffffff"
+          anchorX="center"
+          anchorY="middle"
+        >
+          {questionIndex + 1} of {totalQuestions}
+        </Text>
+        
+        {/* Progress dots */}
+        <group position={[0, -0.8, 0]}>
+          {Array.from({ length: totalQuestions }).map((_, i) => (
+            <Sphere
+              key={i}
+              position={[(i - (totalQuestions - 1) / 2) * 0.4, 0, 0]}
+              args={[0.08, 16, 16]}
+            >
+              <meshStandardMaterial 
+                color={i <= questionIndex ? "#00ff88" : "#333333"}
+                emissive={i <= questionIndex ? "#00ff88" : "#333333"}
+                emissiveIntensity={i <= questionIndex ? 0.3 : 0}
+              />
+            </Sphere>
+          ))}
+        </group>
+      </group>
     </group>
   )
 }
 
-// Quiz UI Overlay Component
+// Enhanced Quiz UI Overlay Component
 function QuizUI({
   question,
   currentAnswer,
@@ -382,7 +424,15 @@ function QuizUI({
   return (
     <>
       {/* Progress Bar */}
-      <div className="absolute top-4 left-4 right-4 z-20">
+      <div className="absolute top-0 left-0 right-0 z-30 px-4 pt-4 md:pt-8">
+        <div className="flex justify-between items-center mb-2 md:mb-3">
+          <div className="text-white text-xs md:text-sm font-medium">
+            Question {Math.floor(progress * 5)} of 5
+          </div>
+          <div className="text-gray-400 text-xs md:text-sm">
+            {Math.round(progress * 100)}% Complete
+          </div>
+        </div>
         <div className="w-full bg-gray-800 rounded-full h-2">
           <motion.div
             className="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full"
@@ -394,25 +444,31 @@ function QuizUI({
       </div>
 
       {/* Question Content */}
-      <div className="absolute inset-0 flex flex-col justify-center items-center p-4 z-10">
-        <div className="max-w-2xl mx-auto text-center">
+      <div className="absolute top-16 md:top-24 left-0 right-0 flex flex-col items-center z-20 px-4">
+        <div className="max-w-2xl w-full mx-auto text-center">
+          {/* Question Header */}
           <motion.div
             key={question.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5 }}
+            className="mb-4 md:mb-8"
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
+            <h2 className="text-2xl md:text-4xl font-bold text-white mb-2 md:mb-4 leading-tight break-words">
               {question.question}
             </h2>
-            <p className="text-gray-300 mb-8 text-lg">
+            <p className="text-base md:text-xl text-gray-300 max-w-xl mx-auto">
               {question.subtitle}
             </p>
           </motion.div>
+        </div>
+      </div>
 
-          {/* Options */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto mb-8 max-h-96 overflow-y-auto">
+      {/* Options Grid */}
+      <div className="absolute left-0 right-0 top-[32vh] md:top-[34vh] z-20 flex flex-col items-center px-4">
+        <div className="w-full max-w-2xl mx-auto">
+          <div className="grid grid-cols-1 gap-4 mb-6">
             {question.options.map((option, index) => {
               const isSelected = currentAnswer?.selectedOptions?.includes(option.id) || false
               const isDisabled = 
@@ -423,62 +479,73 @@ function QuizUI({
               return (
                 <motion.button
                   key={option.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ delay: index * 0.08 }}
                   onClick={() => !isDisabled && onOptionSelect(option.id)}
                   disabled={isDisabled}
                   className={`
-                    p-4 rounded-xl text-left transition-all duration-300 border-2
+                    relative p-5 md:p-6 rounded-2xl text-left transition-all duration-300 border-2 backdrop-blur-sm w-full
                     ${isSelected 
-                      ? 'bg-gradient-to-r from-green-500 to-blue-500 border-green-400 text-white' 
+                      ? 'bg-gradient-to-br from-green-500/20 to-blue-500/20 border-green-400 text-white shadow-lg shadow-green-500/25' 
                       : isDisabled
-                        ? 'bg-gray-700 border-gray-600 text-gray-400 cursor-not-allowed'
-                        : 'bg-gray-800 border-gray-600 text-white hover:border-green-400 hover:bg-gray-700'
+                        ? 'bg-gray-800/50 border-gray-600 text-gray-400 cursor-not-allowed'
+                        : 'bg-gray-800/30 border-gray-600 text-white hover:border-green-400 hover:bg-gray-700/50 hover:shadow-lg'
                     }
                   `}
                 >
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">{option.icon}</span>
-                    <span className="font-medium">{option.label}</span>
+                  <div className="flex items-center space-x-4">
+                    <span className="text-2xl md:text-3xl">{option.icon}</span>
+                    <span className="font-medium text-base md:text-lg">{option.label}</span>
                   </div>
+                  {isSelected && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute top-3 right-3 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center"
+                    >
+                      <span className="text-white text-sm">✓</span>
+                    </motion.div>
+                  )}
                 </motion.button>
               )
             })}
           </div>
 
+          {/* Selection Counter */}
+          {question.type === 'multiple' && (
+            <div className="text-center mb-4">
+              <div className="inline-block bg-gray-800/50 backdrop-blur-sm rounded-full px-4 py-2">
+                <span className="text-gray-300">
+                  {currentAnswer?.selectedOptions?.length || 0} of {question.maxSelections} selected
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Navigation */}
-          <div className="flex justify-between items-center max-w-md mx-auto">
-            <button
+          <div className="flex justify-between items-center max-w-2xl mx-auto mt-2 mb-4">
+            <motion.button
               onClick={onBack}
               disabled={!canGoBack}
               className={`
-                px-6 py-3 rounded-full font-medium transition-all duration-300
+                px-8 py-3 rounded-full font-medium transition-all duration-300 backdrop-blur-sm
                 ${canGoBack 
-                  ? 'bg-gray-700 text-white hover:bg-gray-600' 
-                  : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                  ? 'bg-gray-700/50 text-white hover:bg-gray-600/50 border border-gray-600' 
+                  : 'bg-gray-800/30 text-gray-500 cursor-not-allowed border border-gray-700'
                 }
               `}
             >
               ← Back
-            </button>
-
-            <div className="text-gray-400 text-sm">
-              {question.type === 'multiple' && (
-                <span>
-                  {currentAnswer?.selectedOptions?.length || 0} / {question.maxSelections} selected
-                </span>
-              )}
-            </div>
-
-            <button
+            </motion.button>
+            <motion.button
               onClick={onNext}
               disabled={!canGoNext || isSubmitting}
               className={`
-                px-6 py-3 rounded-full font-medium transition-all duration-300
+                px-8 py-3 rounded-full font-medium transition-all duration-300 backdrop-blur-sm
                 ${canGoNext && !isSubmitting
-                  ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white hover:from-green-600 hover:to-blue-600' 
-                  : 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                  ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white hover:from-green-600 hover:to-blue-600 shadow-lg' 
+                  : 'bg-gray-800/30 text-gray-500 cursor-not-allowed border border-gray-700'
                 }
               `}
             >
@@ -492,7 +559,7 @@ function QuizUI({
               ) : (
                 'Next →'
               )}
-            </button>
+            </motion.button>
           </div>
         </div>
       </div>
@@ -500,7 +567,7 @@ function QuizUI({
   )
 }
 
-// Floating Particles Component
+// Enhanced Floating Particles Component
 function FloatingParticles({ 
   count = 50, 
   color = "#ffffff", 
@@ -538,9 +605,9 @@ function FloatingParticles({
     >
       <pointsMaterial
         color={color}
-        size={0.03}
+        size={0.04}
         transparent
-        opacity={0.4}
+        opacity={0.5}
         sizeAttenuation={true}
       />
     </Points>
