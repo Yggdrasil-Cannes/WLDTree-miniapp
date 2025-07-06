@@ -121,8 +121,8 @@ export async function POST(req: Request) {
       // Prepare the verification payload with required fields
       const verificationPayload = {
         ...payload,
-        // Ensure verification_level is present (default to 'orb' if missing)
-        verification_level: payload.verification_level || 'orb'
+        // For wallet authentication, use 'device' verification level
+        verification_level: payload.verification_level || 'device'
       };
 
       const verifyResult = await verifyCloudProof(

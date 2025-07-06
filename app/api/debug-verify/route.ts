@@ -11,12 +11,12 @@ export async function POST(req: Request) {
     console.log("Debug action:", action);
     console.log("Debug APP_ID:", process.env.APP_ID);
     
-    // Test with a minimal valid payload
+    // Test with a minimal valid payload for wallet authentication
     const testPayload = {
       nullifier_hash: "test_hash_123",
       merkle_root: "test_root_123", 
       proof: "test_proof_123",
-      verification_level: "orb"
+      verification_level: "device"
     };
     
     console.log("Testing with payload:", JSON.stringify(testPayload, null, 2));
