@@ -39,7 +39,7 @@ export function LandingPage({ onComplete }: LandingPageProps = {}) {
 
     setIsLoading(true);
     setError(null);
-
+    
     try {
       // Step 1: Get nonce from backend
       console.log('📡 Fetching nonce from backend...');
@@ -108,10 +108,10 @@ export function LandingPage({ onComplete }: LandingPageProps = {}) {
         });
 
         // Complete the flow
-        if (onComplete) {
-          onComplete();
-        } else {
-          router.push('/quiz');
+      if (onComplete) {
+        onComplete();
+      } else {
+        router.push('/quiz');
         }
       } else {
         console.error('❌ Backend verification failed:', verifyResult);

@@ -298,15 +298,15 @@ function QuizVisualizer({
       {/* Central question core */}
       <group position={[0, 0, 0]}>
         <Sphere args={[1.2, 32, 32]}>
-          <meshStandardMaterial 
-            color="#00ff88" 
-            emissive="#00aa55"
+        <meshStandardMaterial 
+          color="#00ff88" 
+          emissive="#00aa55"
             emissiveIntensity={0.4}
             transparent
             opacity={0.9}
-          />
-        </Sphere>
-        
+        />
+      </Sphere>
+
         {/* Question indicator */}
         <Text
           position={[0, 0, 1.5]}
@@ -344,9 +344,9 @@ function QuizVisualizer({
             ]}
             color={element.isSelected ? "#FFD700" : "#4ecdc4"}
             lineWidth={element.isSelected ? 3 : 1}
-            transparent
-            opacity={0.6}
-          />
+                transparent
+                opacity={0.6}
+              />
 
           {/* Option label */}
           <Text
@@ -367,14 +367,14 @@ function QuizVisualizer({
 
       {/* Progress indicator */}
       <group position={[0, -6, 0]}>
-        <Text
+      <Text
           fontSize={0.4}
-          color="#ffffff"
-          anchorX="center"
-          anchorY="middle"
-        >
+        color="#ffffff"
+        anchorX="center"
+        anchorY="middle"
+      >
           {questionIndex + 1} of {totalQuestions}
-        </Text>
+      </Text>
         
         {/* Progress dots */}
         <group position={[0, -0.8, 0]}>

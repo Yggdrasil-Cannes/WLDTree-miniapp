@@ -153,7 +153,7 @@ export default function WorldTreeChat() {
                         ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
                         : message.isError
                           ? 'bg-red-600 text-white'
-                          : 'bg-gray-700 text-white'
+                        : 'bg-gray-700 text-white'
                     }
                   `}
                 >

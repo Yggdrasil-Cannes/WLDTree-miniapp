@@ -13,7 +13,7 @@ export async function GET() {
       VERCEL_ENV: process.env.VERCEL_ENV,
       VERCEL_URL: process.env.VERCEL_URL
     };
-
+    
     // Check if all required env vars are present
     const missingVars = Object.entries({
       APP_ID: process.env.APP_ID,
@@ -22,7 +22,7 @@ export async function GET() {
       DATABASE_URL: process.env.DATABASE_URL,
       NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET
     }).filter(([key, value]) => !value).map(([key]) => key);
-
+    
     return NextResponse.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
@@ -39,7 +39,7 @@ export async function GET() {
     return NextResponse.json({
       status: 'error',
       timestamp: new Date().toISOString(),
-      error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 });
   }
 } 

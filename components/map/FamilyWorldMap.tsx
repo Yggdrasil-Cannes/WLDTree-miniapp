@@ -347,7 +347,7 @@ const FamilyWorldMap = () => {
             <p className="text-xs text-slate-300 mt-1">
               {familyLocations.length} family locations across the globe
             </p>
-          </div>
+            </div>
         </div>
 
         {/* Floating Action Panel */}
@@ -376,9 +376,9 @@ const FamilyWorldMap = () => {
             label="Export" 
             onClick={() => console.log('Export clicked')} 
           />
-        </div>
+      </div>
 
-        {/* Legend */}
+      {/* Legend */}
         <div className="absolute bottom-6 left-6 bg-black/60 backdrop-blur-md border border-slate-700 text-white p-4 rounded-2xl text-sm pointer-events-auto">
           <h3 className="font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
             Map Legend
@@ -488,7 +488,7 @@ const ActionButton = ({
       <div className="absolute right-full mr-2 top-1/2 transform -translate-y-1/2 bg-black/80 text-white px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
         {label}
       </div>
-    </button>
+        </button>
   );
 };
 

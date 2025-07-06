@@ -109,9 +109,9 @@ const FamilyTreeScene = () => {
                     {/* Pulsing ring for selected node */}
                     {selectedNode === member.id && (
                       <div className="absolute inset-0 rounded-full border-2 border-green-400 animate-ping"></div>
-                    )}
-                  </div>
-                  
+        )}
+      </div>
+
                   {/* Node label */}
                   <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 text-center">
                     <div className="bg-black/80 backdrop-blur-md border border-slate-600 text-white px-2 py-1 rounded text-xs whitespace-nowrap">
@@ -119,8 +119,8 @@ const FamilyTreeScene = () => {
                     </div>
                     <div className="text-xs text-slate-400 mt-1">
                       Gen {generation}
-                    </div>
-                  </div>
+      </div>
+    </div>
                   
                   {/* Connection lines to children */}
                   {member.children && member.children.length > 0 && (
