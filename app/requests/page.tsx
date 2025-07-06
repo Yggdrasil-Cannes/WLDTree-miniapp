@@ -6,6 +6,47 @@ import { Users, UserPlus, MessageSquare, CheckCircle, XCircle, Clock, Shield, Za
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useWorldTree } from '../../contexts/WorldTreeContext';
+import { InputMap, type CompiledCircuit } from "@noir-lang/noir_js";
+import { type UltraHonkBackend, type BarretenbergVerifier } from "@aztec/bb.js";
+import { type Noir } from "@noir-lang/noir_js";
+
+let proverPromise: Promise<{
+  Noir: typeof Noir;
+  UltraHonkBackend: typeof UltraHonkBackend;
+}> | null = null;
+
+export async function initProver() {
+  if (!proverPromise) {
+    proverPromise = (async () => {
+      const [{ Noir }, { UltraHonkBackend }] = await Promise.all([
+        import("@noir-lang/noir_js"),
+        import("@aztec/bb.js"),
+      ]);
+      return {
+        Noir,
+        UltraHonkBackend,
+      };
+    })();
+  }
+  return proverPromise;
+}
+
+//
+
+let verifierPromise: Promise<{
+  BarretenbergVerifier: typeof BarretenbergVerifier;
+}> | null = null;
+
+export async function initVerifier() {
+  if (!verifierPromise) {
+    verifierPromise = (async () => {
+      const { BarretenbergVerifier } = await import("@aztec/bb.js");
+      return { BarretenbergVerifier };
+    })();
+  }
+  return verifierPromise;
+}
+
 
 interface FamilyRequest {
   id: string;
@@ -131,11 +172,15 @@ export default function RequestsPage() {
   // Mock ZK proof generation
   const generateZKProof = async (requestId: string) => {
     console.log('Generating ZK proof for request:', requestId);
+    const { Noir, UltraHonkBackend } = await initProver();
+    const circuitArtifact = await import(`../../validGenes.json`);
+    const backend = new UltraHonkBackend(circuitArtifact.bytecode, { threads: 8 });
+    const noir = new Noir(circuitArtifact as CompiledCircuit);
+    let inputs = {dna:localStorage.getItem("dna")};
+    const { witness } = await noir.execute(inputs as InputMap);
+    const proof = await backend.generateProof(witness);
     setIsGeneratingProof(true);
-    
-    // Simulate ZK proof generation
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+
     console.log('ZK proof generated successfully');
     setIsGeneratingProof(false);
     return 'zk_proof_hash_' + requestId;
